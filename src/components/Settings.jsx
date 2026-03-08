@@ -1,0 +1,270 @@
+import { useState } from 'react';
+import { getBirthDate, setBirthDate, setLifespanYears, getLifespanYears, MONTH_NAMES_FULL } from '../utils/dateEngine';
+
+export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange }) {
+    const currentBirth = getBirthDate();
+    const [year, setYear] = useState(currentBirth.getFullYear());
+    const [month, setMonth] = useState(currentBirth.getMonth());
+    const [day, setDay] = useState(currentBirth.getDate());
+    const [lifespan, setLifespan] = useState(getLifespanYears());
+
+    if (!isOpen) return null;
+
+    const handleSave = () => {
+        setBirthDate(year, month, day);
+        setLifespanYears(lifespan);
+        onBirthDateChange();
+        onClose();
+    };
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    if (day > daysInMonth) setDay(daysInMonth);
+
+    const inputStyle = {
+        backgroundColor: 'var(--control-bg)',
+        color: 'var(--fg)',
+        border: '1px solid var(--control-border)',
+        padding: '10px 14px',
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+            onClick={onClose}
+        >
+            <div
+                className="rounded-2xl shadow-2xl w-full max-w-sm mx-4"
+                style={{
+                    backgroundColor: 'var(--bg)',
+                    border: '1px solid var(--control-border)',
+                    padding: '32px 28px',
+                    maxHeight: '90vh',
+                    overflowY: 'auto',
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <h2
+                    className="text-lg font-semibold"
+                    style={{ color: 'var(--fg)', marginBottom: '4px' }}
+                >
+                    Settings
+                </h2>
+                <p
+                    className="text-xs font-light"
+                    style={{ color: 'var(--fg-muted)', marginBottom: '24px' }}
+                >
+                    Personalize your life in dots
+                </p>
+
+                {/* Section: Birth Date */}
+                <p
+                    className="text-[10px] font-semibold tracking-widest uppercase"
+                    style={{ color: 'var(--fg-muted)', marginBottom: '14px' }}
+                >
+                    Birth Date
+                </p>
+
+                {/* Year + Day row */}
+                <div className="flex gap-3" style={{ marginBottom: '12px' }}>
+                    <label className="flex-1">
+                        <span
+                            className="text-xs font-medium block"
+                            style={{ color: 'var(--fg-muted)', marginBottom: '6px' }}
+                        >
+                            Year
+                        </span>
+                        <input
+                            type="number"
+                            min="1920"
+                            max="2025"
+                            value={year}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setYear(val === '' ? '' : parseInt(val) || 2000);
+                            }}
+                            className="w-full rounded-lg text-sm outline-none"
+                            style={inputStyle}
+                        />
+                    </label>
+                    <label style={{ width: '80px', flexShrink: 0 }}>
+                        <span
+                            className="text-xs font-medium block"
+                            style={{ color: 'var(--fg-muted)', marginBottom: '6px' }}
+                        >
+                            Day
+                        </span>
+                        <input
+                            type="number"
+                            min="1"
+                            max={daysInMonth}
+                            value={day}
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) setDay(Math.max(1, Math.min(val, daysInMonth)));
+                            }}
+                            className="w-full rounded-lg text-sm outline-none"
+                            style={inputStyle}
+                        />
+                    </label>
+                </div>
+
+                {/* Month */}
+                <label className="block" style={{ marginBottom: '20px' }}>
+                    <span
+                        className="text-xs font-medium block"
+                        style={{ color: 'var(--fg-muted)', marginBottom: '6px' }}
+                    >
+                        Month
+                    </span>
+                    <select
+                        value={month}
+                        onChange={(e) => setMonth(parseInt(e.target.value))}
+                        className="w-full rounded-lg text-sm outline-none"
+                        style={inputStyle}
+                    >
+                        {MONTH_NAMES_FULL.map((name, i) => (
+                            <option key={i} value={i}>
+                                {name}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+
+                {/* Divider */}
+                <div
+                    style={{
+                        height: '1px',
+                        backgroundColor: 'var(--control-border)',
+                        marginBottom: '20px',
+                    }}
+                />
+
+                {/* Section: Life Expectancy */}
+                <p
+                    className="text-[10px] font-semibold tracking-widest uppercase"
+                    style={{ color: 'var(--fg-muted)', marginBottom: '14px' }}
+                >
+                    Life Expectancy
+                </p>
+
+                <label className="block" style={{ marginBottom: '28px' }}>
+                    <span
+                        className="text-xs font-medium block"
+                        style={{ color: 'var(--fg-muted)', marginBottom: '6px' }}
+                    >
+                        Expected years to live
+                    </span>
+                    <input
+                        type="number"
+                        min="1"
+                        max="150"
+                        value={lifespan}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                                setLifespan('');
+                            } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num)) setLifespan(Math.max(1, Math.min(num, 150)));
+                            }
+                        }}
+                        onBlur={() => {
+                            if (lifespan === '' || isNaN(lifespan)) setLifespan(80);
+                        }}
+                        className="w-full rounded-lg text-sm outline-none"
+                        style={inputStyle}
+                    />
+                </label>
+
+                {/* Divider */}
+                <div
+                    style={{
+                        height: '1px',
+                        backgroundColor: 'var(--control-border)',
+                        marginBottom: '20px',
+                    }}
+                />
+
+                {/* Section: Preferences */}
+                <p
+                    className="text-[10px] font-semibold tracking-widest uppercase"
+                    style={{ color: 'var(--fg-muted)', marginBottom: '14px' }}
+                >
+                    Preferences
+                </p>
+
+                <div
+                    className="flex items-center justify-between"
+                    style={{ marginBottom: '28px' }}
+                >
+                    <div>
+                        <span
+                            className="text-xs font-medium block"
+                            style={{ color: 'var(--fg)' }}
+                        >
+                            Heartbeat pulse
+                        </span>
+                        <span
+                            className="text-[10px] font-light"
+                            style={{ color: 'var(--fg-muted)' }}
+                        >
+                            Animate the current time dot
+                        </span>
+                    </div>
+                    <button
+                        onClick={() => onHeartbeatChange(!heartbeat)}
+                        className="relative rounded-full transition-colors duration-200"
+                        style={{
+                            width: '44px',
+                            height: '24px',
+                            backgroundColor: heartbeat ? 'var(--fg)' : 'var(--control-border)',
+                            flexShrink: 0,
+                        }}
+                        type="button"
+                    >
+                        <span
+                            className="absolute rounded-full transition-transform duration-200"
+                            style={{
+                                width: '18px',
+                                height: '18px',
+                                backgroundColor: 'var(--bg)',
+                                top: '50%',
+                                left: heartbeat ? '23px' : '3px',
+                                transform: 'translateY(-50%)',
+                            }}
+                        />
+                    </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 rounded-full text-sm font-medium transition-colors"
+                        style={{
+                            padding: '11px 16px',
+                            backgroundColor: 'var(--control-bg)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--control-border)',
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        className="flex-1 rounded-full text-sm font-medium transition-colors"
+                        style={{
+                            padding: '11px 16px',
+                            backgroundColor: 'var(--fg)',
+                            color: 'var(--bg)',
+                        }}
+                    >
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
