@@ -5,6 +5,7 @@ import ThemeToggle from './components/ThemeToggle';
 import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
 import Settings from './components/Settings';
+import AuthButton from './components/AuthButton';
 import { getLifeStats, getCalendarDate, getBirthDate } from './utils/dateEngine';
 
 const VIEW_TRANSITION = {
@@ -117,6 +118,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 relative" style={{ paddingTop: '80px', paddingBottom: '48px' }}>
+
+      {/* Auth Button — top left */}
+      <AuthButton />
+
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
