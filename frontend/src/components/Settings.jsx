@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { getBirthDate, setBirthDate, setLifespanYears, getLifespanYears, MONTH_NAMES_FULL } from '../utils/dateEngine';
+import { saveSettings, isAuthenticated } from '../utils/api';
+import { getAllDotMeta } from '../utils/dotMeta';
 
 export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange }) {
     const currentBirth = getBirthDate();
@@ -14,6 +16,17 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
         const dayNum = Math.max(1, Math.min(parseInt(day) || 1, daysInMonth));
         setBirthDate(year, month, dayNum);
         setLifespanYears(lifespan);
+
+        if (isAuthenticated()) {
+            const m = String(month + 1).padStart(2, '0');
+            const d = String(dayNum).padStart(2, '0');
+            saveSettings({
+                birth_date: `${year}-${m}-${d}`,
+                expected_lifespan: lifespan,
+                dot_meta: getAllDotMeta(),
+            }).catch(() => {});
+        }
+
         onBirthDateChange();
         onClose();
     };
