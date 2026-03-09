@@ -30,6 +30,19 @@ export async function apiFetch(path, options = {}) {
   return json.data;
 }
 
+export async function getGoogleAuthUrl(redirectTo) {
+  const params = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : '';
+  return apiFetch(`/api/auth/google${params}`);
+}
+
+export async function exchangeAuthCode(code) {
+  return apiFetch(`/api/auth/callback?code=${encodeURIComponent(code)}`);
+}
+
+export async function getCurrentUser() {
+  return apiFetch('/api/auth/me');
+}
+
 export async function fetchSettings() {
   if (!authToken) return null;
   return apiFetch('/api/settings');

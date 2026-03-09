@@ -20,7 +20,7 @@ if (missing.length) {
  * and administrative tasks that need full access.
  */
 export const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
+  auth: { autoRefreshToken: false, persistSession: false, flowType: 'implicit' },
 });
 
 /**
