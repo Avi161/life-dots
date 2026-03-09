@@ -5,20 +5,20 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
     const currentBirth = getBirthDate();
     const [year, setYear] = useState(currentBirth.getFullYear());
     const [month, setMonth] = useState(currentBirth.getMonth());
-    const [day, setDay] = useState(currentBirth.getDate());
+    const [day, setDay] = useState(String(currentBirth.getDate()));
     const [lifespan, setLifespan] = useState(getLifespanYears());
 
     if (!isOpen) return null;
 
     const handleSave = () => {
-        setBirthDate(year, month, day);
+        const dayNum = Math.max(1, Math.min(parseInt(day) || 1, daysInMonth));
+        setBirthDate(year, month, dayNum);
         setLifespanYears(lifespan);
         onBirthDateChange();
         onClose();
     };
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    if (day > daysInMonth) setDay(daysInMonth);
 
     const inputStyle = {
         backgroundColor: 'var(--control-bg)',
@@ -100,9 +100,10 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                             min="1"
                             max={daysInMonth}
                             value={day}
-                            onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val)) setDay(Math.max(1, Math.min(val, daysInMonth)));
+                            onChange={(e) => setDay(e.target.value)}
+                            onBlur={() => {
+                                const val = parseInt(day);
+                                setDay(String(isNaN(val) ? 1 : Math.max(1, Math.min(val, daysInMonth))));
                             }}
                             className="w-full rounded-lg text-sm outline-none"
                             style={inputStyle}
