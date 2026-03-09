@@ -8,6 +8,9 @@ import Settings from './components/Settings';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { hydrateMetaFromRemote } from './utils/dotMeta';
 import { fetchSettings, saveSettings, isAuthenticated, setAuthToken } from './utils/api';
+import AuthButton from './components/AuthButton';
+import { getLifeStats, getCalendarDate, getBirthDate } from './utils/dateEngine';
+import { getAllDotMeta, setDotMeta } from './utils/dotMeta';
 
 const VIEW_TRANSITION = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
@@ -28,6 +31,9 @@ export default function App() {
   });
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('lifedots-theme') || 'light';
+  });
+  const [defaultColor, setDefaultColor] = useState(() => {
+    return localStorage.getItem('lifedots-default-color') || 'theme';
   });
 
   const gridRef = useRef(null);
@@ -73,6 +79,23 @@ export default function App() {
       syncThemeToRemote(next);
       return next;
     });
+  };
+
+  const handleSaveDefaultColor = (newColor) => {
+    if (newColor === defaultColor) return;
+
+    const allMeta = getAllDotMeta();
+    const oldColor = defaultColor === 'theme' ? null : defaultColor;
+
+    for (const [dotId, meta] of Object.entries(allMeta)) {
+      if (meta.color === newColor) {
+        setDotMeta(dotId, { color: oldColor, tag: meta.tag });
+      }
+    }
+
+    localStorage.setItem('lifedots-default-color', newColor);
+    setDefaultColor(newColor);
+    setRefreshKey((k) => k + 1);
   };
 
   const pushView = (mode) => {
@@ -152,6 +175,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 relative" style={{ paddingTop: '80px', paddingBottom: '48px' }}>
+
+      {/* Auth Button — top left */}
+      <AuthButton />
+
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
@@ -184,6 +211,8 @@ export default function App() {
             saveSettings({ heartbeat_enabled: val }).catch(() => {});
           }
         }}
+        defaultColor={defaultColor}
+        onSaveDefaultColor={handleSaveDefaultColor}
       />
 
       {/* Header */}
@@ -238,6 +267,7 @@ export default function App() {
               onMonthGridClick={handleMonthGridClick}
               onDayClick={handleDayClick}
               heartbeat={heartbeat}
+              defaultColor={defaultColor}
             />
           </motion.div>
         </AnimatePresence>
