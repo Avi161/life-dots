@@ -5,12 +5,10 @@ import ThemeToggle from './components/ThemeToggle';
 import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
 import Settings from './components/Settings';
-import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
-import { hydrateMetaFromRemote } from './utils/dotMeta';
-import { fetchSettings, saveSettings, isAuthenticated, setAuthToken } from './utils/api';
 import AuthButton from './components/AuthButton';
-import { getLifeStats, getCalendarDate, getBirthDate } from './utils/dateEngine';
-import { getAllDotMeta, setDotMeta } from './utils/dotMeta';
+import { fetchSettings, saveSettings, isAuthenticated, setAuthToken } from './utils/api';
+import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
+import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 
 const VIEW_TRANSITION = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
@@ -69,7 +67,7 @@ export default function App() {
 
   const syncThemeToRemote = useCallback((newTheme) => {
     if (isAuthenticated()) {
-      saveSettings({ theme: newTheme }).catch(() => {});
+      saveSettings({ theme: newTheme }).catch(() => { });
     }
   }, []);
 
@@ -208,7 +206,7 @@ export default function App() {
           setHeartbeat(val);
           localStorage.setItem('lifedots-heartbeat', val ? 'on' : 'off');
           if (isAuthenticated()) {
-            saveSettings({ heartbeat_enabled: val }).catch(() => {});
+            saveSettings({ heartbeat_enabled: val }).catch(() => { });
           }
         }}
         defaultColor={defaultColor}
