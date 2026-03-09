@@ -14,6 +14,14 @@ export async function getSettings(supabase, userId) {
   return data;
 }
 
+export async function ensureProfile(supabaseAdmin, userId, email) {
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .upsert({ id: userId, username: email }, { onConflict: 'id' });
+
+  if (error) throw new DatabaseError(error.message);
+}
+
 export async function updateSettings(supabase, userId, updates) {
   const { data, error } = await supabase
     .from('profiles')

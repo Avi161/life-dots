@@ -6,7 +6,7 @@ import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
 import Settings from './components/Settings';
 import AuthButton from './components/AuthButton';
-import { fetchSettings, saveSettings, isAuthenticated, setAuthToken } from './utils/api';
+import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser } from './utils/api';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 
@@ -24,50 +24,75 @@ export default function App() {
   const [navStack, setNavStack] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [heartbeat, setHeartbeat] = useState(() => {
-    return localStorage.getItem('lifedots-heartbeat') !== 'off';
-  });
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('lifedots-theme') || 'light';
-  });
+  const [heartbeat, setHeartbeat] = useState(true);
+  const [theme, setTheme] = useState('light');
   const [defaultColor, setDefaultColor] = useState(() => {
     return localStorage.getItem('lifedots-default-color') || 'theme';
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return !!localStorage.getItem('lifedots-auth-token');
   });
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
 
-  useEffect(() => {
-    const token = localStorage.getItem('lifedots-auth-token');
-    if (token) {
-      setAuthToken(token);
-      fetchSettings()
-        .then((remote) => {
-          if (!remote) return;
-          hydrateFromRemote(remote);
-          if (remote.dot_meta) hydrateMetaFromRemote(remote.dot_meta);
-          if (remote.theme) {
-            setTheme(remote.theme);
-            localStorage.setItem('lifedots-theme', remote.theme);
-          }
-          if (remote.heartbeat_enabled != null) {
-            setHeartbeat(remote.heartbeat_enabled);
-            localStorage.setItem('lifedots-heartbeat', remote.heartbeat_enabled ? 'on' : 'off');
-          }
-          setRefreshKey((k) => k + 1);
-        })
-        .catch(() => { /* fall back to localStorage values */ });
-    }
+  const hydrateRemoteSettings = useCallback(() => {
+    return fetchSettings()
+      .then((remote) => {
+        if (!remote) return false;
+        hydrateFromRemote(remote);
+        if (remote.dot_meta) hydrateMetaFromRemote(remote.dot_meta);
+        if (remote.theme) setTheme(remote.theme);
+        if (remote.heartbeat_enabled != null) setHeartbeat(remote.heartbeat_enabled);
+        setRefreshKey((k) => k + 1);
+        return remote.birth_date == null;
+      })
+      .catch((err) => {
+        console.error('Failed to load remote settings:', err);
+        return false;
+      });
   }, []);
 
   useEffect(() => {
+    const basePath = import.meta.env.BASE_URL || '/';
+
+    const hash = window.location.hash;
+    if (hash) {
+      const hashParams = new URLSearchParams(hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+
+      if (accessToken) {
+        localStorage.setItem('lifedots-auth-token', accessToken);
+        setAuthToken(accessToken);
+        setIsLoggedIn(true);
+
+        window.history.replaceState({}, '', basePath);
+
+        getCurrentUser()
+          .then(() => hydrateRemoteSettings())
+          .then((isNewUser) => {
+            if (isNewUser) setSettingsOpen(true);
+          })
+          .catch((err) => console.error('Auth init failed:', err));
+        return;
+      }
+    }
+
+    const token = localStorage.getItem('lifedots-auth-token');
+    if (token) {
+      setAuthToken(token);
+      setIsLoggedIn(true);
+      hydrateRemoteSettings();
+    }
+  }, [hydrateRemoteSettings]);
+
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('lifedots-theme', theme);
   }, [theme]);
 
   const syncThemeToRemote = useCallback((newTheme) => {
     if (isAuthenticated()) {
-      saveSettings({ theme: newTheme }).catch(() => { });
+      saveSettings({ theme: newTheme }).catch((err) => console.error('Failed to sync theme:', err));
     }
   }, []);
 
@@ -78,6 +103,22 @@ export default function App() {
       return next;
     });
   };
+
+  const handleLogin = useCallback(async () => {
+    try {
+      const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}auth/callback`;
+      const { url } = await getGoogleAuthUrl(redirectTo);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Failed to start login:', err);
+    }
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('lifedots-auth-token');
+    setAuthToken(null);
+    setIsLoggedIn(false);
+  }, []);
 
   const handleSaveDefaultColor = (newColor) => {
     if (newColor === defaultColor) return;
@@ -175,7 +216,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col items-center px-4 relative" style={{ paddingTop: '80px', paddingBottom: '48px' }}>
 
       {/* Auth Button — top left */}
-      <AuthButton />
+      <AuthButton isLoggedIn={isLoggedIn} onLogin={handleLogin} />
 
       {/* Settings button — top right */}
       <button
@@ -204,13 +245,15 @@ export default function App() {
         heartbeat={heartbeat}
         onHeartbeatChange={(val) => {
           setHeartbeat(val);
-          localStorage.setItem('lifedots-heartbeat', val ? 'on' : 'off');
           if (isAuthenticated()) {
-            saveSettings({ heartbeat_enabled: val }).catch(() => { });
+            saveSettings({ heartbeat_enabled: val }).catch((err) => console.error('Failed to sync heartbeat:', err));
           }
         }}
         defaultColor={defaultColor}
         onSaveDefaultColor={handleSaveDefaultColor}
+        isLoggedIn={isLoggedIn}
+        onLogout={handleLogout}
+        refreshKey={refreshKey}
       />
 
       {/* Header */}

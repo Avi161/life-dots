@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import * as authService from '../services/auth.js';
+import { ensureProfile } from '../services/settings.js';
+import { supabaseAdmin } from '../lib/supabase.js';
 import { ValidationError } from '../middleware/errorHandler.js';
 
 const callbackSchema = z.object({
@@ -28,6 +30,7 @@ export async function callback(req, res, next) {
     }
 
     const data = await authService.exchangeCodeForSession(result.data.code);
+    await ensureProfile(supabaseAdmin, data.user.id, data.user.email);
 
     res.json({
       success: true,
@@ -43,6 +46,7 @@ export async function callback(req, res, next) {
 
 export async function me(req, res, next) {
   try {
+    await ensureProfile(supabaseAdmin, req.user.id, req.user.email);
     const profile = await authService.getUserProfile(req.supabase, req.user.id);
 
     res.json({

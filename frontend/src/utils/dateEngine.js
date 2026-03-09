@@ -1,25 +1,7 @@
 // ─── Configurable Birth Date & Lifespan ───
-// Stored in localStorage, defaults to September 4, 2005
-function loadBirthDate() {
-    const stored = localStorage.getItem('lifedots-birthdate');
-    if (stored) {
-        const d = new Date(stored);
-        if (!isNaN(d.getTime())) return d;
-    }
-    return new Date(2005, 8, 4); // September 4, 2005
-}
-
-function loadLifespan() {
-    const stored = localStorage.getItem('lifedots-lifespan');
-    if (stored) {
-        const val = parseInt(stored);
-        if (!isNaN(val) && val > 0 && val <= 150) return val;
-    }
-    return 80;
-}
-
-let BIRTH_DATE = loadBirthDate();
-let LIFESPAN_YEARS = loadLifespan();
+// Defaults shown until Supabase data loads after login
+let BIRTH_DATE = new Date(2005, 8, 4); // September 4, 2005
+let LIFESPAN_YEARS = 80;
 
 function getTotalMonths() {
     return LIFESPAN_YEARS * 12;
@@ -33,7 +15,6 @@ let TOTAL_MONTHS = getTotalMonths();
 export function setBirthDate(year, month, day) {
     BIRTH_DATE = new Date(year, month, day);
     TOTAL_MONTHS = getTotalMonths();
-    localStorage.setItem('lifedots-birthdate', BIRTH_DATE.toISOString());
 }
 
 /**
@@ -42,12 +23,10 @@ export function setBirthDate(year, month, day) {
 export function setLifespanYears(years) {
     LIFESPAN_YEARS = years;
     TOTAL_MONTHS = getTotalMonths();
-    localStorage.setItem('lifedots-lifespan', String(years));
 }
 
 /**
- * Hydrate birth date and lifespan from remote settings.
- * Also syncs values into localStorage.
+ * Hydrate birth date and lifespan from remote settings (Supabase).
  */
 export function hydrateFromRemote({ birth_date, expected_lifespan }) {
     if (birth_date) {
@@ -55,7 +34,6 @@ export function hydrateFromRemote({ birth_date, expected_lifespan }) {
         if (!isNaN(d.getTime())) {
             BIRTH_DATE = d;
             TOTAL_MONTHS = getTotalMonths();
-            localStorage.setItem('lifedots-birthdate', d.toISOString());
         }
     }
     if (expected_lifespan != null) {
@@ -63,7 +41,6 @@ export function hydrateFromRemote({ birth_date, expected_lifespan }) {
         if (!isNaN(val) && val > 0 && val <= 150) {
             LIFESPAN_YEARS = val;
             TOTAL_MONTHS = getTotalMonths();
-            localStorage.setItem('lifedots-lifespan', String(val));
         }
     }
 }

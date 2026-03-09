@@ -4,19 +4,21 @@ import { saveSettings, isAuthenticated } from '../utils/api';
 import { getAllDotMeta } from '../utils/dotMeta';
 import { PALETTE } from '../utils/dotMeta';
 
-export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange, defaultColor, onSaveDefaultColor }) {
-    const currentBirth = getBirthDate();
-    const [year, setYear] = useState(currentBirth.getFullYear());
-    const [month, setMonth] = useState(currentBirth.getMonth());
-    const [day, setDay] = useState(String(currentBirth.getDate()));
-    const [lifespan, setLifespan] = useState(getLifespanYears());
+export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange, defaultColor, onSaveDefaultColor, isLoggedIn, onLogout, refreshKey }) {
+    const [year, setYear] = useState(() => getBirthDate().getFullYear());
+    const [month, setMonth] = useState(() => getBirthDate().getMonth());
+    const [day, setDay] = useState(() => String(getBirthDate().getDate()));
+    const [lifespan, setLifespan] = useState(() => getLifespanYears());
     const [localDefaultColor, setLocalDefaultColor] = useState(defaultColor);
 
     useEffect(() => {
-        if (isOpen) {
-            setLocalDefaultColor(defaultColor);
-        }
-    }, [isOpen, defaultColor]);
+        const b = getBirthDate();
+        setYear(b.getFullYear());
+        setMonth(b.getMonth());
+        setDay(String(b.getDate()));
+        setLifespan(getLifespanYears());
+        setLocalDefaultColor(defaultColor);
+    }, [isOpen, defaultColor, refreshKey]);
 
     if (!isOpen) return null;
 
@@ -30,9 +32,9 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
             const d = String(dayNum).padStart(2, '0');
             saveSettings({
                 birth_date: `${year}-${m}-${d}`,
-                expected_lifespan: lifespan,
+                expected_lifespan: Number(lifespan) || 80,
                 dot_meta: getAllDotMeta(),
-            }).catch(() => {});
+            }).catch((err) => console.error('Failed to save settings:', err));
         }
 
         if (localDefaultColor !== defaultColor) {
@@ -326,6 +328,32 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                         Save
                     </button>
                 </div>
+
+                {isLoggedIn && (
+                    <>
+                        <div
+                            style={{
+                                height: '1px',
+                                backgroundColor: 'var(--control-border)',
+                                marginTop: '20px',
+                                marginBottom: '20px',
+                            }}
+                        />
+                        <button
+                            onClick={() => { onLogout(); onClose(); }}
+                            className="w-full rounded-full text-sm font-medium transition-colors"
+                            style={{
+                                padding: '11px 16px',
+                                backgroundColor: 'var(--control-bg)',
+                                color: '#e07070',
+                                border: '1px solid var(--control-border)',
+                            }}
+                            type="button"
+                        >
+                            Sign out
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
