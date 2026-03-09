@@ -1,10 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import DotGrid from './components/DotGrid';
 import ThemeToggle from './components/ThemeToggle';
 import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
 import Settings from './components/Settings';
+import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
+import { hydrateMetaFromRemote } from './utils/dotMeta';
+import { fetchSettings, saveSettings, isAuthenticated, setAuthToken } from './utils/api';
 import AuthButton from './components/AuthButton';
 import { getLifeStats, getCalendarDate, getBirthDate } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta } from './utils/dotMeta';
@@ -37,12 +40,45 @@ export default function App() {
   const stats = getLifeStats();
 
   useEffect(() => {
+    const token = localStorage.getItem('lifedots-auth-token');
+    if (token) {
+      setAuthToken(token);
+      fetchSettings()
+        .then((remote) => {
+          if (!remote) return;
+          hydrateFromRemote(remote);
+          if (remote.dot_meta) hydrateMetaFromRemote(remote.dot_meta);
+          if (remote.theme) {
+            setTheme(remote.theme);
+            localStorage.setItem('lifedots-theme', remote.theme);
+          }
+          if (remote.heartbeat_enabled != null) {
+            setHeartbeat(remote.heartbeat_enabled);
+            localStorage.setItem('lifedots-heartbeat', remote.heartbeat_enabled ? 'on' : 'off');
+          }
+          setRefreshKey((k) => k + 1);
+        })
+        .catch(() => { /* fall back to localStorage values */ });
+    }
+  }, []);
+
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('lifedots-theme', theme);
   }, [theme]);
 
+  const syncThemeToRemote = useCallback((newTheme) => {
+    if (isAuthenticated()) {
+      saveSettings({ theme: newTheme }).catch(() => {});
+    }
+  }, []);
+
   const toggleTheme = () => {
-    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+    setTheme((t) => {
+      const next = t === 'light' ? 'dark' : 'light';
+      syncThemeToRemote(next);
+      return next;
+    });
   };
 
   const handleSaveDefaultColor = (newColor) => {
@@ -171,6 +207,9 @@ export default function App() {
         onHeartbeatChange={(val) => {
           setHeartbeat(val);
           localStorage.setItem('lifedots-heartbeat', val ? 'on' : 'off');
+          if (isAuthenticated()) {
+            saveSettings({ heartbeat_enabled: val }).catch(() => {});
+          }
         }}
         defaultColor={defaultColor}
         onSaveDefaultColor={handleSaveDefaultColor}

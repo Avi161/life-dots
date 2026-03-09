@@ -45,6 +45,42 @@ export function setLifespanYears(years) {
     localStorage.setItem('lifedots-lifespan', String(years));
 }
 
+/**
+ * Hydrate birth date and lifespan from remote settings.
+ * Also syncs values into localStorage.
+ */
+export function hydrateFromRemote({ birth_date, expected_lifespan }) {
+    if (birth_date) {
+        const d = new Date(birth_date + 'T00:00:00');
+        if (!isNaN(d.getTime())) {
+            BIRTH_DATE = d;
+            TOTAL_MONTHS = getTotalMonths();
+            localStorage.setItem('lifedots-birthdate', d.toISOString());
+        }
+    }
+    if (expected_lifespan != null) {
+        const val = Number(expected_lifespan);
+        if (!isNaN(val) && val > 0 && val <= 150) {
+            LIFESPAN_YEARS = val;
+            TOTAL_MONTHS = getTotalMonths();
+            localStorage.setItem('lifedots-lifespan', String(val));
+        }
+    }
+}
+
+/**
+ * Return birth date and lifespan as an object suitable for the API.
+ */
+export function getSettingsForRemote() {
+    const y = BIRTH_DATE.getFullYear();
+    const m = String(BIRTH_DATE.getMonth() + 1).padStart(2, '0');
+    const d = String(BIRTH_DATE.getDate()).padStart(2, '0');
+    return {
+        birth_date: `${y}-${m}-${d}`,
+        expected_lifespan: LIFESPAN_YEARS,
+    };
+}
+
 export function getLifespanYears() {
     return LIFESPAN_YEARS;
 }

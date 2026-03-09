@@ -2,6 +2,8 @@
 // Stored in localStorage as a JSON object keyed by dot ID string.
 // e.g. { "0": { color: "#e07070", tag: "born!" }, "24": { color: "#7ab87a", tag: null } }
 
+import { saveSettings, isAuthenticated } from './api';
+
 const STORAGE_KEY = 'lifedots-meta';
 
 export const PALETTE = [
@@ -44,12 +46,15 @@ export function setDotMeta(id, { color, tag }) {
     const meta = loadMeta();
     const key = String(id);
     if (color === null && (tag === null || tag === '')) {
-        // Clean up empty entries
         delete meta[key];
     } else {
         meta[key] = { color: color ?? null, tag: tag ?? null };
     }
     saveMeta(meta);
+
+    if (isAuthenticated()) {
+        saveSettings({ dot_meta: meta }).catch(() => {});
+    }
 }
 
 /**
@@ -57,4 +62,14 @@ export function setDotMeta(id, { color, tag }) {
  */
 export function getAllDotMeta() {
     return loadMeta();
+}
+
+/**
+ * Hydrate dot metadata from remote settings.
+ * Replaces the local cache with the remote data.
+ */
+export function hydrateMetaFromRemote(meta) {
+    if (meta && typeof meta === 'object') {
+        saveMeta(meta);
+    }
 }
