@@ -1,0 +1,19 @@
+{
+  "name": "life-dots-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Node.js + Express API for Life in Dots journal entries, backed by Supabase",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2",
+    "cors": "^2",
+    "dotenv": "^16",
+    "express": "^5",
+    "zod": "^3"
+  }
+}
