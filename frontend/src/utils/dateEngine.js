@@ -185,12 +185,8 @@ export function getHourLabel(hour) {
 export function getCurrentMonthIndex(now = new Date()) {
     const birthYear = BIRTH_DATE.getFullYear();
     const birthMonth = BIRTH_DATE.getMonth();
-    const birthDay = BIRTH_DATE.getDate();
 
-    let months = (now.getFullYear() - birthYear) * 12 + (now.getMonth() - birthMonth);
-    if (now.getDate() < birthDay) {
-        months -= 1;
-    }
+    const months = (now.getFullYear() - birthYear) * 12 + (now.getMonth() - birthMonth);
     return Math.max(0, Math.min(months, TOTAL_MONTHS - 1));
 }
 
