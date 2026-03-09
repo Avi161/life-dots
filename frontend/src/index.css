@@ -5,6 +5,8 @@
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+ß
+
 /* ── Base Reset ── */
 *,
 *::before,
@@ -139,4 +141,102 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--fg-muted);
   border-radius: 4px;
+}
+
+/* ── Context Menu ── */
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--control-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  min-width: 160px;
+  animation: ctx-in 0.12s ease-out both;
+}
+
+@keyframes ctx-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.context-menu-swatches {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s ease, outline-color 0.15s ease;
+}
+
+.swatch-btn:hover {
+  transform: scale(1.25);
+}
+
+.swatch-clear {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.swatch-clear:hover {
+  background: var(--control-hover);
+  color: var(--fg);
+}
+
+.context-menu-divider {
+  height: 1px;
+  background: var(--control-border);
+  margin: 0 -2px;
+}
+
+.context-menu-tag-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg);
+  padding: 0;
+  caret-color: var(--fg);
+}
+
+.context-menu-tag-input::placeholder {
+  color: var(--fg-muted);
+  font-weight: 300;
 }
