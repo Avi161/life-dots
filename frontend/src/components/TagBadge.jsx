@@ -5,8 +5,8 @@
 export default function TagBadge({ tag }) {
     if (!tag) return null;
 
-    // Hardcap the visual display to 4 characters to guarantee no collisions
-    const display = tag.slice(0, 4);
+    // Hardcap the visual display to 4 characters, append "." if longer
+    const display = tag.length > 4 ? tag.slice(0, 4) + '.' : tag;
 
     return (
         <span
