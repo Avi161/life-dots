@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getBirthDate, setBirthDate, setLifespanYears, getLifespanYears, MONTH_NAMES_FULL } from '../utils/dateEngine';
+import { PALETTE } from '../utils/dotMeta';
 
-export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange }) {
+export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange, defaultColor, onSaveDefaultColor }) {
     const currentBirth = getBirthDate();
     const [year, setYear] = useState(currentBirth.getFullYear());
     const [month, setMonth] = useState(currentBirth.getMonth());
     const [day, setDay] = useState(String(currentBirth.getDate()));
     const [lifespan, setLifespan] = useState(getLifespanYears());
+    const [localDefaultColor, setLocalDefaultColor] = useState(defaultColor);
+
+    useEffect(() => {
+        if (isOpen) {
+            setLocalDefaultColor(defaultColor);
+        }
+    }, [isOpen, defaultColor]);
 
     if (!isOpen) return null;
 
@@ -14,6 +22,9 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
         const dayNum = Math.max(1, Math.min(parseInt(day) || 1, daysInMonth));
         setBirthDate(year, month, dayNum);
         setLifespanYears(lifespan);
+        if (localDefaultColor !== defaultColor) {
+            onSaveDefaultColor(localDefaultColor);
+        }
         onBirthDateChange();
         onClose();
     };
@@ -195,6 +206,43 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                 >
                     Preferences
                 </p>
+
+                {/* Default Dot Color */}
+                <div style={{ marginBottom: '24px' }}>
+                    <span
+                        className="text-xs font-medium block"
+                        style={{ color: 'var(--fg)', marginBottom: '8px' }}
+                    >
+                        Default dot color
+                    </span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setLocalDefaultColor('theme')}
+                            className="swatch-btn"
+                            style={{
+                                backgroundColor: 'var(--dot-lived)',
+                                outline: localDefaultColor === 'theme' ? '2px solid var(--fg)' : 'none',
+                                outlineOffset: '2px',
+                            }}
+                            title="Theme Adaptive"
+                            type="button"
+                        />
+                        {PALETTE.map((color) => (
+                            <button
+                                key={color}
+                                className="swatch-btn"
+                                style={{
+                                    backgroundColor: color,
+                                    outline: localDefaultColor === color ? `2px solid ${color}` : 'none',
+                                    outlineOffset: '2px',
+                                }}
+                                onClick={() => setLocalDefaultColor(color)}
+                                title={color}
+                                type="button"
+                            />
+                        ))}
+                    </div>
+                </div>
 
                 <div
                     className="flex items-center justify-between"

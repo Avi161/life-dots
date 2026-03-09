@@ -47,7 +47,7 @@ function sizeClass(size) {
     return map[size] || map.sm;
 }
 
-function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null }) {
+function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null, defaultColor = 'theme' }) {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const dotRef = useRef(null);
@@ -93,12 +93,15 @@ function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartb
     let backgroundColor;
     let border;
 
+    const baseColor = defaultColor === 'theme' ? 'var(--dot-lived)' : defaultColor;
+    const baseCurrentColor = defaultColor === 'theme' ? 'var(--dot-current)' : defaultColor;
+
     if (status === 'lived') {
-        backgroundColor = color ?? 'var(--dot-lived)';
+        backgroundColor = color ?? baseColor;
         border = 'none';
     } else if (status === 'current') {
-        backgroundColor = color ?? 'var(--dot-current)';
-        border = `1.5px solid ${color ?? 'var(--dot-current)'}`;
+        backgroundColor = color ?? baseCurrentColor;
+        border = `1.5px solid ${color ?? baseCurrentColor}`;
     } else {
         // future
         backgroundColor = 'transparent';
@@ -145,6 +148,7 @@ export default function DotGrid({
     onMonthGridClick,
     onDayClick,
     heartbeat = true,
+    defaultColor = 'theme',
 }) {
     const now = new Date();
     const stats = getLifeStats(now);
@@ -241,6 +245,7 @@ export default function DotGrid({
                                         size="lg"
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
+                                        defaultColor={defaultColor}
                                         onContextMenu={handleContextMenu}
                                     />
                                     <span
@@ -316,6 +321,7 @@ export default function DotGrid({
                                         size="md"
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
+                                        defaultColor={defaultColor}
                                     />
                                     <span
                                         className="text-[9px] font-medium"
@@ -393,6 +399,7 @@ export default function DotGrid({
                                         size="lg"
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
+                                        defaultColor={defaultColor}
                                     />
                                     <span
                                         className="text-[10px] font-medium tracking-wide uppercase"
@@ -451,6 +458,7 @@ export default function DotGrid({
                                         size="md"
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
+                                        defaultColor={defaultColor}
                                     />
                                     <TagBadge tag={dotMeta.tag} />
                                 </div>
@@ -506,6 +514,7 @@ export default function DotGrid({
                                 size="sm"
                                 heartbeat={heartbeat}
                                 color={dotMeta.color ?? null}
+                                defaultColor={defaultColor}
                             />
                         );
                         // Deliberately NOT adding TagBadge here to keep the intense grid clean!
