@@ -193,7 +193,12 @@ export default function DotGrid({
         const calYear = getCalendarYear(selectedYear);
         const calMonth = selectedMonth;
         const hours = getHoursForDay(calYear, calMonth, selectedDay, now);
-        const dayLabel = getDayLabel(calYear, calMonth, selectedDay);
+        let dayLabel = getDayLabel(calYear, calMonth, selectedDay);
+
+        // Append day tag to header if it exists
+        const parentDotId = `day_${calYear}_${calMonth}_${selectedDay}`;
+        const parentTag = meta[parentDotId]?.tag;
+        if (parentTag) dayLabel += ` · ${parentTag}`;
 
         return (
             <div className="flex flex-col items-center gap-6" style={{ position: 'relative' }}>
@@ -213,7 +218,7 @@ export default function DotGrid({
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-6 gap-3 sm:gap-4 max-w-md mx-auto"
+                    className="grid grid-cols-6 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-6 max-w-md mx-auto"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -227,7 +232,7 @@ export default function DotGrid({
                             return (
                                 <div
                                     key={h.hour}
-                                    className="flex flex-col items-center gap-1.5"
+                                    className="flex flex-col items-center gap-1.5 relative"
                                 >
                                     <Dot
                                         status={h.status}
@@ -260,7 +265,12 @@ export default function DotGrid({
         const calYear = getCalendarYear(selectedYear);
         const calMonth = selectedMonth;
         const days = getDaysForMonth(calYear, calMonth, now);
-        const monthLabel = `${MONTH_NAMES[calMonth]} ${calYear}`;
+        let monthLabel = `${MONTH_NAMES[calMonth]} ${calYear}`;
+
+        // Append month tag to header if it exists
+        const parentDotId = String(getMonthIndexFromCalendar(calYear, calMonth));
+        const parentTag = meta[parentDotId]?.tag;
+        if (parentTag) monthLabel += ` · ${parentTag}`;
         const visibleDays = days.filter(d => d.status !== 'before-birth');
 
         return (
@@ -281,7 +291,7 @@ export default function DotGrid({
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-7 gap-3 sm:gap-4 max-w-sm mx-auto"
+                    className="grid grid-cols-7 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-6 max-w-sm mx-auto"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -295,7 +305,7 @@ export default function DotGrid({
                             return (
                                 <div
                                     key={d.day}
-                                    className="flex flex-col items-center gap-1.5"
+                                    className="flex flex-col items-center gap-1.5 relative"
                                 >
                                     <Dot
                                         status={d.status}
@@ -330,9 +340,14 @@ export default function DotGrid({
     // ─── Single Year View (12 dots, Jan-Dec) ───
     if (viewMode === 'singleYear') {
         const months = getMonthsForYear(selectedYear, now);
-        const yearLabel = getYearLabel(selectedYear);
+        let yearLabel = getYearLabel(selectedYear);
         const ageLabel = getAgeLabel(selectedYear);
         const calYear = getCalendarYear(selectedYear);
+
+        // Append year tag to header if it exists
+        const parentDotId = `year_${selectedYear}`;
+        const parentTag = meta[parentDotId]?.tag;
+        if (parentTag) yearLabel += ` · ${parentTag}`;
 
         return (
             <div className="flex flex-col items-center gap-6" style={{ position: 'relative' }}>
@@ -352,7 +367,7 @@ export default function DotGrid({
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-4 sm:grid-cols-6 gap-4 sm:gap-5"
+                    className="grid grid-cols-4 sm:grid-cols-6 gap-x-4 gap-y-7 sm:gap-x-5 sm:gap-y-8"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -367,7 +382,7 @@ export default function DotGrid({
                             return (
                                 <div
                                     key={m.calMonth}
-                                    className="flex flex-col items-center gap-2"
+                                    className="flex flex-col items-center gap-2 relative"
                                 >
                                     <Dot
                                         status={m.status}
@@ -413,7 +428,7 @@ export default function DotGrid({
                 </div>
 
                 <motion.div
-                    className="grid grid-cols-8 sm:grid-cols-10 gap-x-3 gap-y-4 sm:gap-x-4 sm:gap-y-5 max-w-md mx-auto"
+                    className="grid grid-cols-8 sm:grid-cols-10 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-6 max-w-md mx-auto"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -426,7 +441,7 @@ export default function DotGrid({
                             const label = dotMeta.tag ? `${rawLabel} · ${dotMeta.tag}` : rawLabel;
 
                             return (
-                                <div key={dotId} className="flex flex-col items-center gap-1.5">
+                                <div key={dotId} className="flex flex-col items-center gap-1.5 relative">
                                     <Dot
                                         status={getYearStatus(i, now)}
                                         label={label}
