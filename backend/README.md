@@ -35,7 +35,7 @@ Fill in your `.env` with values from the Supabase dashboard:
 | `SUPABASE_URL` | Project Settings > API > Project URL |
 | `SUPABASE_ANON_KEY` | Project Settings > API > Project API keys > `anon` / `public` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Project Settings > API > Project API keys > `service_role` (keep secret) |
-| `PORT` | Express port, defaults to `3001` |
+| `PORT` | Express port, defaults to `4000` |
 | `FRONTEND_URL` | CORS origin, defaults to `http://localhost:5173` |
 
 ### 4. Install Supabase CLI
@@ -61,7 +61,7 @@ supabase db push
 npm run dev
 ```
 
-The API is available at `http://localhost:3001/api`.
+The API is available at `http://localhost:4000/api`.
 
 ## Local Development with Supabase CLI
 

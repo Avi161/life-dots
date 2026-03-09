@@ -7,7 +7,7 @@ import settingsRoutes from './routes/settings.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 4000;
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
