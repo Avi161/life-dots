@@ -7,6 +7,7 @@ import ExportButton from './components/ExportButton';
 import Settings from './components/Settings';
 import AuthButton from './components/AuthButton';
 import { getLifeStats, getCalendarDate, getBirthDate } from './utils/dateEngine';
+import { getAllDotMeta, setDotMeta } from './utils/dotMeta';
 
 const VIEW_TRANSITION = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
@@ -28,6 +29,9 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('lifedots-theme') || 'light';
   });
+  const [defaultColor, setDefaultColor] = useState(() => {
+    return localStorage.getItem('lifedots-default-color') || 'theme';
+  });
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
@@ -39,6 +43,23 @@ export default function App() {
 
   const toggleTheme = () => {
     setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+  };
+
+  const handleSaveDefaultColor = (newColor) => {
+    if (newColor === defaultColor) return;
+
+    const allMeta = getAllDotMeta();
+    const oldColor = defaultColor === 'theme' ? null : defaultColor;
+
+    for (const [dotId, meta] of Object.entries(allMeta)) {
+      if (meta.color === newColor) {
+        setDotMeta(dotId, { color: oldColor, tag: meta.tag });
+      }
+    }
+
+    localStorage.setItem('lifedots-default-color', newColor);
+    setDefaultColor(newColor);
+    setRefreshKey((k) => k + 1);
   };
 
   const pushView = (mode) => {
@@ -151,6 +172,8 @@ export default function App() {
           setHeartbeat(val);
           localStorage.setItem('lifedots-heartbeat', val ? 'on' : 'off');
         }}
+        defaultColor={defaultColor}
+        onSaveDefaultColor={handleSaveDefaultColor}
       />
 
       {/* Header */}
@@ -205,6 +228,7 @@ export default function App() {
               onMonthGridClick={handleMonthGridClick}
               onDayClick={handleDayClick}
               heartbeat={heartbeat}
+              defaultColor={defaultColor}
             />
           </motion.div>
         </AnimatePresence>
