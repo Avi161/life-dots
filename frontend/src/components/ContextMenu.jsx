@@ -41,9 +41,11 @@ export default function ContextMenu({ x, y, dotId, meta, onUpdate, onClose }) {
             if (e.key === 'Enter') commitAndClose();
         };
         document.addEventListener('mousedown', handleClick);
+        document.addEventListener('touchstart', handleClick);
         document.addEventListener('keydown', handleKey);
         return () => {
             document.removeEventListener('mousedown', handleClick);
+            document.removeEventListener('touchstart', handleClick);
             document.removeEventListener('keydown', handleKey);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps

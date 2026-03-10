@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import useLongPress from '../hooks/useLongPress';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     getMonthStatus,
@@ -51,6 +52,9 @@ function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartb
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const dotRef = useRef(null);
+
+    // Long-press for mobile touch devices
+    const longPressHandlers = useLongPress(onContextMenu, index);
 
     // Hide before-birth dots (invisible placeholder to preserve grid layout)
     if (status === 'before-birth') {
@@ -121,12 +125,20 @@ function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartb
                 animate="visible"
                 exit="exit"
                 className={`${baseStyle} ${dotStyle}`}
-                style={{ backgroundColor, border }}
+                style={{
+                    backgroundColor,
+                    border,
+                    touchAction: 'none',
+                    WebkitTouchCallout: 'none',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none'
+                }}
                 onClick={onClick}
                 onContextMenu={handleContextMenu}
                 onMouseEnter={handleMouseEnter}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                {...longPressHandlers}
                 role="button"
                 tabIndex={0}
                 aria-label={label}

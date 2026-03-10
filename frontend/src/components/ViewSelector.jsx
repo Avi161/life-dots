@@ -2,8 +2,8 @@ export default function ViewSelector({ viewMode, onChange, onBack }) {
     const showBack = viewMode === 'singleYear' || viewMode === 'singleMonth' || viewMode === 'singleDay';
 
     const tabs = [
-        { key: 'months', label: 'Months' },
         { key: 'years', label: 'Years' },
+        { key: 'months', label: 'Months' },
     ];
 
     return (
