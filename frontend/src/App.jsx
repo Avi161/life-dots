@@ -209,7 +209,7 @@ export default function App() {
       setSelectedDay(null);
     }
 
-    setViewMode(prev || 'months');
+    setViewMode(prev || 'years');
   };
 
   const handleViewChange = (mode) => {
@@ -222,7 +222,7 @@ export default function App() {
 
   const handleBirthDateChange = () => {
     // Reset to top-level view and force re-render
-    setViewMode('months');
+    setViewMode('years');
     setNavStack([]);
     setSelectedYear(null);
     setSelectedMonth(null);
@@ -311,7 +311,7 @@ export default function App() {
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
-        className="fixed top-5 right-5 z-40 rounded-full transition-colors duration-200 flex items-center justify-center"
+        className="fixed top-5 right-5 z-40 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 hover:opacity-80 active:scale-95"
         style={{
           width: '40px',
           height: '40px',

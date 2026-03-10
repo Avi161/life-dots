@@ -11,7 +11,7 @@ export default function ViewSelector({ viewMode, onChange, onBack }) {
             {showBack && (
                 <button
                     onClick={onBack}
-                    className="text-sm font-medium rounded-full transition-colors duration-200"
+                    className="text-sm font-medium rounded-full transition-all duration-200 hover:scale-105 hover:opacity-80 active:scale-95"
                     style={{
                         padding: '8px 19px',
                         backgroundColor: 'var(--control-bg)',
@@ -28,7 +28,7 @@ export default function ViewSelector({ viewMode, onChange, onBack }) {
                     <button
                         key={tab.key}
                         onClick={() => onChange(tab.key)}
-                        className="relative text-sm font-medium rounded-full transition-colors duration-200"
+                        className="relative text-sm font-medium rounded-full transition-all duration-200 hover:scale-105 hover:opacity-80 active:scale-95"
                         style={{
                             padding: '8px 19px',
                             backgroundColor:
