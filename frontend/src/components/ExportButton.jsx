@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { toPng } from 'html-to-image';
 import { Download } from 'lucide-react';
 
@@ -6,16 +6,26 @@ export default function ExportButton({ targetRef }) {
     const handleExport = useCallback(async () => {
         if (!targetRef.current) return;
 
+        const el = targetRef.current;
+        const padding = 60;
+
         try {
-            const dataUrl = await toPng(targetRef.current, {
+            const dataUrl = await toPng(el, {
                 backgroundColor:
                     document.documentElement.getAttribute('data-theme') === 'dark'
                         ? '#000000'
                         : '#ffffff',
-                pixelRatio: 3,
+                pixelRatio: 2,
                 quality: 1,
+                width: el.scrollWidth + padding * 2,
+                height: el.scrollHeight + padding * 2,
                 style: {
-                    padding: '60px',
+                    width: `${el.scrollWidth}px`,
+                    height: `${el.scrollHeight}px`,
+                    maxWidth: 'none',
+                    padding: `${padding}px`,
+                    margin: '0',
+                    overflow: 'visible',
                 },
             });
 

@@ -291,7 +291,7 @@ export default function App() {
 
   const footerLabel = {
     months: 'Each dot is a month of your life',
-    years: 'Each dot is a year of your life',
+    years: `${stats.totalYears} years · Right-click a dot to color or tag`,
     singleYear: 'Each dot is a month — click to see days',
     singleMonth: 'Each dot is a day — click to see hours',
     singleDay: 'Each dot is an hour of your day',

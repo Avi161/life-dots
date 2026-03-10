@@ -488,7 +488,7 @@ export default function DotGrid({
                         className="text-sm font-light"
                         style={{ color: 'var(--fg-muted)' }}
                     >
-                        {stats.totalYears} years · Right-click a dot to color or tag
+                        Each dot is a year of your life
                     </p>
                 </div>
 
