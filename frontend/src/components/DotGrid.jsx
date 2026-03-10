@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import useLongPress from '../hooks/useLongPress';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -48,7 +48,7 @@ function sizeClass(size) {
     return map[size] || map.sm;
 }
 
-function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null, defaultColor = 'theme' }) {
+const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null, defaultColor = 'theme' }) {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const dotRef = useRef(null);
@@ -148,7 +148,18 @@ function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartb
             )}
         </>
     );
-}
+}, (prevProps, nextProps) => {
+    // Only re-render if visual properties or data identity changes
+    return (
+        prevProps.status === nextProps.status &&
+        prevProps.label === nextProps.label &&
+        prevProps.index === nextProps.index &&
+        prevProps.size === nextProps.size &&
+        prevProps.heartbeat === nextProps.heartbeat &&
+        prevProps.color === nextProps.color &&
+        prevProps.defaultColor === nextProps.defaultColor
+    );
+});
 
 export default function DotGrid({
     viewMode,
@@ -161,12 +172,19 @@ export default function DotGrid({
     onDayClick,
     heartbeat = true,
     defaultColor = 'theme',
+    updateTrigger = 0,
 }) {
     const now = new Date();
     const stats = getLifeStats(now);
 
     // ─── Dot metadata (color + tag) ───
     const [meta, setMeta] = useState(() => getAllDotMeta());
+
+    // Smoothly pull in new metadata when App container signals an update
+    useEffect(() => {
+        setMeta(getAllDotMeta());
+    }, [updateTrigger]);
+
     const [contextMenu, setContextMenu] = useState(null); // { x, y, dotId }
 
     const handleContextMenu = useCallback((e, dotId) => {

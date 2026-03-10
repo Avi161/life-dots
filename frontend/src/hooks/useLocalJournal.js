@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { isAuthenticated, fetchJournalEntry, saveJournalEntry } from '../utils/api';
 
 const STORAGE_KEY = 'lifedots-journal-entries';
 
@@ -10,82 +11,144 @@ function readAll() {
     }
 }
 
+function writeAll(all) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+
 /**
- * Reads / writes a single journal entry (HTML string) keyed by `contextKey`
- * in localStorage. Auto-saves with a 500 ms debounce.
+ * Backend-first, local-fallback journal hook.
  *
- * Returns { content, setContent, saveStatus }
+ * - If authenticated → loads from / saves to the API.
+ * - If not authenticated → uses localStorage.
+ * - Exposes `isLoading` so the editor can delay mounting until data arrives.
+ *
+ * Returns { content, setContent, saveStatus, forceSave, isLoading }
  *   saveStatus: 'idle' | 'saving' | 'saved'
  */
 export default function useLocalJournal(contextKey) {
-    const [content, setContentState] = useState(() => {
-        const all = readAll();
-        return all[contextKey] || '';
-    });
-    const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved
+    const [content, setContentState] = useState('');
+    const [saveStatus, setSaveStatus] = useState('idle');
+    const [isLoading, setIsLoading] = useState(true);
+
     const timerRef = useRef(null);
     const savedTimerRef = useRef(null);
-    const latestContentRef = useRef(content); // Synchronous tracking for unmounts
+    const latestContentRef = useRef('');
+    const contextKeyRef = useRef(contextKey);
 
-    // Sync state if contextKey changes while hook is still mounted
+    // Keep contextKeyRef in sync so callbacks always see the latest value
     useEffect(() => {
-        const all = readAll();
-        const initialContent = all[contextKey] || '';
-        setContentState(initialContent);
-        latestContentRef.current = initialContent;
+        contextKeyRef.current = contextKey;
+    }, [contextKey]);
+
+    // ── Load on mount / key change ──────────────────────────────────────
+    useEffect(() => {
+        let cancelled = false;
+        setIsLoading(true);
         setSaveStatus('idle');
 
-        // Clear pending timers on key change
+        // Clear any pending save timers from the previous key
+        clearTimeout(timerRef.current);
+        clearTimeout(savedTimerRef.current);
+
+        async function load() {
+            if (isAuthenticated()) {
+                try {
+                    const entry = await fetchJournalEntry(contextKey);
+                    if (!cancelled) {
+                        const value = entry?.content || '';
+                        setContentState(value);
+                        latestContentRef.current = value;
+                    }
+                } catch {
+                    // Network error → fall back to localStorage
+                    if (!cancelled) {
+                        const value = readAll()[contextKey] || '';
+                        setContentState(value);
+                        latestContentRef.current = value;
+                    }
+                }
+            } else {
+                const value = readAll()[contextKey] || '';
+                setContentState(value);
+                latestContentRef.current = value;
+            }
+
+            if (!cancelled) setIsLoading(false);
+        }
+
+        load();
+
         return () => {
-            clearTimeout(timerRef.current);
-            clearTimeout(savedTimerRef.current);
+            cancelled = true;
         };
     }, [contextKey]);
 
+    // ── Persist helper (sync for localStorage, fire-and-forget for API) ─
+    const persist = useCallback((key, value) => {
+        const isEmpty =
+            !value ||
+            value === '<p></p>' ||
+            value === '<p><br></p>' ||
+            value.trim() === '';
+
+        if (isAuthenticated()) {
+            if (!isEmpty) {
+                saveJournalEntry(key, value).catch(() => {
+                    // API failed → save to localStorage as a safety net
+                    const all = readAll();
+                    all[key] = value;
+                    writeAll(all);
+                });
+            }
+            // If empty we intentionally do nothing (don't delete remotely on every keystroke)
+        } else {
+            const all = readAll();
+            if (!isEmpty) {
+                all[key] = value;
+            } else {
+                delete all[key];
+            }
+            writeAll(all);
+        }
+    }, []);
+
+    // ── forceSave ───────────────────────────────────────────────────────
     const forceSave = useCallback(() => {
         clearTimeout(timerRef.current);
         clearTimeout(savedTimerRef.current);
 
-        const value = latestContentRef.current;
-        const all = readAll();
-        const isEmpty = !value || value === '<p></p>' || value === '<p><br></p>' || value.trim() === '';
-
-        if (!isEmpty) {
-            all[contextKey] = value;
-        } else {
-            delete all[contextKey]; // clean up empty entries
-        }
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+        persist(contextKeyRef.current, latestContentRef.current);
         setSaveStatus('saved');
 
         savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
-    }, [contextKey]);
+    }, [persist]);
 
+    // ── setContent (debounced 500ms) ────────────────────────────────────
     const setContent = useCallback(
         (value) => {
             setContentState(value);
-            latestContentRef.current = value; // Update ref synchronously
+            latestContentRef.current = value;
             setSaveStatus('saving');
 
-            // Debounce the write
             clearTimeout(timerRef.current);
             timerRef.current = setTimeout(() => {
                 forceSave();
             }, 500);
         },
-        [forceSave], // forceSave depends on contextKey
+        [forceSave],
     );
 
-    // Auto-save when the component entirely unmounts (e.g., overlay is closed)
+    // ── Flush on unmount ────────────────────────────────────────────────
     useEffect(() => {
         return () => {
             if (timerRef.current) {
-                // If there was a pending save, execute it immediately on unmount
-                forceSave();
+                clearTimeout(timerRef.current);
+                // Fire one final save synchronously (API call is fire-and-forget)
+                persist(contextKeyRef.current, latestContentRef.current);
             }
+            clearTimeout(savedTimerRef.current);
         };
-    }, [forceSave]);
+    }, [persist]);
 
-    return { content, setContent, saveStatus, forceSave };
+    return { content, setContent, saveStatus, forceSave, isLoading };
 }

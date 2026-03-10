@@ -7,9 +7,9 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', journalController.list);
-router.get('/:date', journalController.getByDate);
+router.get('/:key', journalController.getByKey);
 router.post('/', journalController.create);
-router.put('/:date', journalController.update);
-router.delete('/:date', journalController.remove);
+router.put('/:key', journalController.update);
+router.delete('/:key', journalController.remove);
 
 export default router;

@@ -1,43 +1,39 @@
 import { DatabaseError, NotFoundError } from '../middleware/errorHandler.js';
 
-export async function listEntries(supabase, userId, { from, to } = {}) {
-  let query = supabase
+export async function listEntries(supabase, userId) {
+  const { data, error } = await supabase
     .from('journal_entries')
-    .select('id, entry_date, content, created_at, updated_at')
+    .select('id, context_key, content, created_at, updated_at')
     .eq('user_id', userId)
-    .order('entry_date', { ascending: false });
+    .order('updated_at', { ascending: false });
 
-  if (from) query = query.gte('entry_date', from);
-  if (to) query = query.lte('entry_date', to);
-
-  const { data, error } = await query;
   if (error) throw new DatabaseError(error.message);
 
   return data;
 }
 
-export async function getEntry(supabase, userId, entryDate) {
+export async function getEntry(supabase, userId, contextKey) {
   const { data, error } = await supabase
     .from('journal_entries')
-    .select('id, entry_date, content, created_at, updated_at')
+    .select('id, context_key, content, created_at, updated_at')
     .eq('user_id', userId)
-    .eq('entry_date', entryDate)
+    .eq('context_key', contextKey)
     .maybeSingle();
 
   if (error) throw new DatabaseError(error.message);
-  if (!data) throw new NotFoundError(`No entry found for ${entryDate}`);
+  if (!data) throw new NotFoundError(`No entry found for ${contextKey}`);
 
   return data;
 }
 
-export async function upsertEntry(supabase, userId, entryDate, content) {
+export async function upsertEntry(supabase, userId, contextKey, content) {
   const { data, error } = await supabase
     .from('journal_entries')
     .upsert(
-      { user_id: userId, entry_date: entryDate, content },
-      { onConflict: 'user_id,entry_date' },
+      { user_id: userId, context_key: contextKey, content },
+      { onConflict: 'user_id,context_key' },
     )
-    .select('id, entry_date, content, created_at, updated_at')
+    .select('id, context_key, content, created_at, updated_at')
     .single();
 
   if (error) throw new DatabaseError(error.message);
@@ -45,30 +41,30 @@ export async function upsertEntry(supabase, userId, entryDate, content) {
   return data;
 }
 
-export async function updateEntry(supabase, userId, entryDate, content) {
+export async function updateEntry(supabase, userId, contextKey, content) {
   const { data, error } = await supabase
     .from('journal_entries')
     .update({ content })
     .eq('user_id', userId)
-    .eq('entry_date', entryDate)
-    .select('id, entry_date, content, created_at, updated_at')
+    .eq('context_key', contextKey)
+    .select('id, context_key, content, created_at, updated_at')
     .maybeSingle();
 
   if (error) throw new DatabaseError(error.message);
-  if (!data) throw new NotFoundError(`No entry found for ${entryDate}`);
+  if (!data) throw new NotFoundError(`No entry found for ${contextKey}`);
 
   return data;
 }
 
-export async function deleteEntry(supabase, userId, entryDate) {
+export async function deleteEntry(supabase, userId, contextKey) {
   const { data, error } = await supabase
     .from('journal_entries')
     .delete()
     .eq('user_id', userId)
-    .eq('entry_date', entryDate)
+    .eq('context_key', contextKey)
     .select('id')
     .maybeSingle();
 
   if (error) throw new DatabaseError(error.message);
-  if (!data) throw new NotFoundError(`No entry found for ${entryDate}`);
+  if (!data) throw new NotFoundError(`No entry found for ${contextKey}`);
 }

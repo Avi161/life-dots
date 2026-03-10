@@ -7,7 +7,7 @@ import ExportButton from './components/ExportButton';
 import JournalButton from './components/JournalButton';
 import JournalOverlay from './components/JournalOverlay';
 import Settings from './components/Settings';
-import AuthButton from './components/AuthButton';
+import UserProfile from './components/UserProfile';
 import useJournalContext from './hooks/useJournalContext';
 import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser } from './utils/api';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
@@ -36,6 +36,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return !!localStorage.getItem('lifedots-auth-token');
   });
+  const [user, setUser] = useState(null);
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
@@ -74,7 +75,10 @@ export default function App() {
         window.history.replaceState({}, '', basePath);
 
         getCurrentUser()
-          .then(() => hydrateRemoteSettings())
+          .then((u) => {
+            setUser(u);
+            return hydrateRemoteSettings();
+          })
           .then((isNewUser) => {
             if (isNewUser) setSettingsOpen(true);
           })
@@ -87,6 +91,9 @@ export default function App() {
     if (token) {
       setAuthToken(token);
       setIsLoggedIn(true);
+      getCurrentUser()
+        .then((u) => setUser(u))
+        .catch((err) => console.error('Failed to get user details:', err));
       hydrateRemoteSettings();
     }
   }, [hydrateRemoteSettings]);
@@ -121,8 +128,12 @@ export default function App() {
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('lifedots-auth-token');
+    localStorage.removeItem('lifedots-journal-entries');
     setAuthToken(null);
     setIsLoggedIn(false);
+
+    // Force a complete client reload to wipe any in-memory app state and settings
+    window.location.reload();
   }, []);
 
   const handleSaveDefaultColor = (newColor) => {
@@ -220,15 +231,21 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col items-center px-4 relative" style={{ paddingTop: '80px', paddingBottom: '48px' }}>
 
-      {/* Auth Button — top left */}
-      <AuthButton isLoggedIn={isLoggedIn} onLogin={handleLogin} />
+      {/* User Profile — top right (next to settings) */}
+      <UserProfile
+        user={user}
+        isLoggedIn={isLoggedIn}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+      />
 
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
-        className="fixed top-5 right-5 z-40 rounded-full transition-colors duration-200"
+        className="fixed top-5 right-5 z-40 rounded-full transition-colors duration-200 flex items-center justify-center"
         style={{
-          padding: '8px',
+          width: '40px',
+          height: '40px',
           backgroundColor: 'var(--control-bg)',
           border: '1px solid var(--control-border)',
           color: 'var(--fg-muted)',
@@ -236,7 +253,7 @@ export default function App() {
         aria-label="Settings"
         data-html2canvas-ignore="true"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
@@ -313,7 +330,7 @@ export default function App() {
       </div>
 
       {/* Grid Area */}
-      <main ref={gridRef} className="w-full max-w-4xl mx-auto" key={refreshKey}>
+      <main ref={gridRef} className="w-full max-w-4xl mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={viewMode + (selectedYear ?? '') + (selectedMonth ?? '') + (selectedDay ?? '')}
@@ -330,6 +347,7 @@ export default function App() {
               onDayClick={handleDayClick}
               heartbeat={heartbeat}
               defaultColor={defaultColor}
+              updateTrigger={refreshKey}
             />
           </motion.div>
         </AnimatePresence>

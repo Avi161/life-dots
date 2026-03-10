@@ -119,7 +119,7 @@ function ColorSwatch({ color, active, onClick }) {
 }
 
 export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
-    const { content, setContent, saveStatus, forceSave } = useLocalJournal(contextKey);
+    const { content, setContent, saveStatus, forceSave, isLoading } = useLocalJournal(contextKey);
     const [, forceUpdate] = useState(0); // Used to ensure toolbar active states update instantly
 
     const handleClose = useCallback(() => {
@@ -162,17 +162,17 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
         },
     });
 
-    // Sync content when contextKey changes (editor might already exist)
+    // Update content cleanly if it arrives late from network 
+    // (after the editor mounted with local cached initial content)
     useEffect(() => {
-        if (editor && content !== undefined) {
+        if (editor && !isLoading && content !== undefined) {
             const currentHTML = editor.getHTML();
-            // Only set content if it actually differs (avoid cursor jump)
             if (currentHTML !== content) {
                 editor.commands.setContent(content || '');
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [contextKey]);
+    }, [contextKey, isLoading]);
 
     // Close on Escape
     useEffect(() => {
@@ -258,24 +258,6 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                             title="Save & Close"
                         >
                             <Check size={16} style={{ color: 'var(--color-green, #4ade80)' }} />
-                        </button>
-                        <button
-                            onClick={handleClose}
-                            className="p-2 rounded-full transition-colors duration-200"
-                            style={{
-                                backgroundColor: 'var(--control-bg)',
-                                color: 'var(--fg-muted)',
-                                flexShrink: 0,
-                            }}
-                            onMouseEnter={(e) =>
-                                (e.target.style.backgroundColor = 'var(--control-hover)')
-                            }
-                            onMouseLeave={(e) =>
-                                (e.target.style.backgroundColor = 'var(--control-bg)')
-                            }
-                            aria-label="Close journal"
-                        >
-                            <X size={16} />
                         </button>
                     </div>
                 </div>
@@ -429,8 +411,14 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                 </div>
 
                 {/* Editor */}
-                <div className="journal-editor-wrapper">
-                    <EditorContent editor={editor} />
+                <div className="journal-editor-wrapper relative" style={{ minHeight: '300px' }}>
+                    {/* Loading Overlay */}
+                    {isLoading && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-b-md" style={{ backgroundColor: 'var(--bg)' }}>
+                            <span className="text-sm font-medium animate-pulse" style={{ color: 'var(--fg-muted)' }}>Loading...</span>
+                        </div>
+                    )}
+                    <EditorContent editor={editor} className="h-full" />
                 </div>
             </motion.div>
         </motion.div>
