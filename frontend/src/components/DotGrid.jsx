@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import useLongPress from '../hooks/useLongPress';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
     getMonthStatus,
     getYearStatus,
@@ -170,6 +171,9 @@ export default function DotGrid({
     onMonthClick,
     onMonthGridClick,
     onDayClick,
+    onNavigateYear,
+    onNavigateMonth,
+    onNavigateDay,
     heartbeat = true,
     defaultColor = 'theme',
     updateTrigger = 0,
@@ -236,13 +240,21 @@ export default function DotGrid({
 
         return (
             <div className="flex flex-col items-center gap-6" style={{ position: 'relative' }}>
-                <div className="text-center">
-                    <h2
-                        className="text-2xl font-semibold tracking-tight"
-                        style={{ color: 'var(--fg)' }}
-                    >
-                        {dayLabel}
-                    </h2>
+                <div className="text-center w-full max-w-sm mx-auto">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                        <button onClick={() => onNavigateDay && onNavigateDay(-1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Previous day" title="Previous day">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <h2
+                            className="text-2xl font-semibold tracking-tight"
+                            style={{ color: 'var(--fg)' }}
+                        >
+                            {dayLabel}
+                        </h2>
+                        <button onClick={() => onNavigateDay && onNavigateDay(1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Next day" title="Next day">
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
                     <p
                         className="text-sm mt-1 font-light"
                         style={{ color: 'var(--fg-muted)' }}
@@ -310,13 +322,21 @@ export default function DotGrid({
 
         return (
             <div className="flex flex-col items-center gap-6" style={{ position: 'relative' }}>
-                <div className="text-center">
-                    <h2
-                        className="text-2xl font-semibold tracking-tight"
-                        style={{ color: 'var(--fg)' }}
-                    >
-                        {monthLabel}
-                    </h2>
+                <div className="text-center w-full max-w-sm mx-auto">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                        <button onClick={() => onNavigateMonth && onNavigateMonth(-1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Previous month" title="Previous month">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <h2
+                            className="text-2xl font-semibold tracking-tight"
+                            style={{ color: 'var(--fg)' }}
+                        >
+                            {monthLabel}
+                        </h2>
+                        <button onClick={() => onNavigateMonth && onNavigateMonth(1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Next month" title="Next month">
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
                     <p
                         className="text-sm mt-1 font-light"
                         style={{ color: 'var(--fg-muted)' }}
@@ -387,13 +407,21 @@ export default function DotGrid({
 
         return (
             <div className="flex flex-col items-center gap-6" style={{ position: 'relative' }}>
-                <div className="text-center">
-                    <h2
-                        className="text-2xl font-semibold tracking-tight"
-                        style={{ color: 'var(--fg)' }}
-                    >
-                        {yearLabel}
-                    </h2>
+                <div className="text-center w-full max-w-sm mx-auto">
+                    <div className="flex items-center justify-between mb-1 gap-2">
+                        <button onClick={() => onNavigateYear && onNavigateYear(-1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Previous year" title="Previous year">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <h2
+                            className="text-2xl font-semibold tracking-tight"
+                            style={{ color: 'var(--fg)' }}
+                        >
+                            {yearLabel}
+                        </h2>
+                        <button onClick={() => onNavigateYear && onNavigateYear(1)} className="p-1 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer" aria-label="Next year" title="Next year">
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
                     <p
                         className="text-sm mt-1 font-light"
                         style={{ color: 'var(--fg-muted)' }}

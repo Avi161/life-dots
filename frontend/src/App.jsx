@@ -13,10 +13,18 @@ import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAu
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 
-const VIEW_TRANSITION = {
-  initial: { opacity: 0, y: 20, scale: 0.98 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -20, scale: 0.98, transition: { duration: 0.25 } },
+const viewVariants = {
+  initial: (navDir) => {
+    if (navDir === 'left') return { opacity: 0, x: -60, scale: 0.98 };
+    if (navDir === 'right') return { opacity: 0, x: 60, scale: 0.98 };
+    return { opacity: 0, y: 20, scale: 0.98 };
+  },
+  animate: { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: 0.35, ease: 'easeOut' } },
+  exit: (navDir) => {
+    if (navDir === 'left') return { opacity: 0, x: 60, scale: 0.98, transition: { duration: 0.2 } };
+    if (navDir === 'right') return { opacity: 0, x: -60, scale: 0.98, transition: { duration: 0.2 } };
+    return { opacity: 0, y: -20, scale: 0.98, transition: { duration: 0.25 } };
+  },
 };
 
 export default function App() {
@@ -28,6 +36,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const navDirectionRef = useRef(null);
   const [heartbeat, setHeartbeat] = useState(true);
   const [theme, setTheme] = useState('light');
   const [defaultColor, setDefaultColor] = useState(() => {
@@ -129,6 +138,7 @@ export default function App() {
   const handleLogout = useCallback(() => {
     localStorage.removeItem('lifedots-auth-token');
     localStorage.removeItem('lifedots-journal-entries');
+    localStorage.removeItem('lifedots-default-color');
     setAuthToken(null);
     setIsLoggedIn(false);
 
@@ -219,6 +229,65 @@ export default function App() {
     setSelectedDay(null);
     setRefreshKey((k) => k + 1);
   };
+
+  const handleNavigateYear = useCallback((direction) => {
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    setSelectedYear((prev) => {
+      if (prev === null) return prev;
+      const next = prev + direction;
+      if (next < 0) return 0;
+      if (next >= stats.totalYears) return stats.totalYears - 1;
+      return next;
+    });
+  }, [stats.totalYears]);
+
+  const handleNavigateMonth = useCallback((direction) => {
+    if (selectedMonth === null || selectedYear === null) return;
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    let newMonth = selectedMonth + direction;
+    let newYear = selectedYear;
+
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear -= 1;
+    } else if (newMonth > 11) {
+      newMonth = 0;
+      newYear += 1;
+    }
+
+    if (newYear < 0) {
+      newYear = 0;
+      newMonth = 0;
+    } else if (newYear >= stats.totalYears) {
+      newYear = stats.totalYears - 1;
+      newMonth = 11;
+    }
+
+    setSelectedMonth(newMonth);
+    setSelectedYear(newYear);
+  }, [selectedMonth, selectedYear, stats.totalYears]);
+
+  const handleNavigateDay = useCallback((direction) => {
+    if (selectedYear === null || selectedMonth === null || selectedDay === null) return;
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    const calYear = getBirthDate().getFullYear() + selectedYear;
+    const d = new Date(calYear, selectedMonth, selectedDay + direction);
+
+    // Do not navigate before birth date
+    if (d < getBirthDate()) {
+      return;
+    }
+
+    const newYearIndex = d.getFullYear() - getBirthDate().getFullYear();
+    // Do not navigate past max lifespan
+    if (newYearIndex >= stats.totalYears) {
+      return;
+    }
+
+    setSelectedDay(d.getDate());
+    setSelectedMonth(d.getMonth());
+    setSelectedYear(newYearIndex);
+  }, [selectedYear, selectedMonth, selectedDay, stats.totalYears]);
 
   const footerLabel = {
     months: 'Each dot is a month of your life',
@@ -331,10 +400,15 @@ export default function App() {
 
       {/* Grid Area */}
       <main ref={gridRef} className="w-full max-w-4xl mx-auto">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" custom={navDirectionRef.current}>
           <motion.div
             key={viewMode + (selectedYear ?? '') + (selectedMonth ?? '') + (selectedDay ?? '')}
-            {...VIEW_TRANSITION}
+            custom={navDirectionRef.current}
+            variants={viewVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            onAnimationComplete={() => { navDirectionRef.current = null; }}
           >
             <DotGrid
               viewMode={viewMode}
@@ -345,6 +419,9 @@ export default function App() {
               onMonthClick={handleMonthClick}
               onMonthGridClick={handleMonthGridClick}
               onDayClick={handleDayClick}
+              onNavigateYear={handleNavigateYear}
+              onNavigateMonth={handleNavigateMonth}
+              onNavigateDay={handleNavigateDay}
               heartbeat={heartbeat}
               defaultColor={defaultColor}
               updateTrigger={refreshKey}
