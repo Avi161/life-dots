@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, CheckSquare, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { X, Check, Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, CheckSquare, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -118,8 +118,13 @@ function ColorSwatch({ color, active, onClick }) {
 }
 
 export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
-    const { content, setContent, saveStatus } = useLocalJournal(contextKey);
+    const { content, setContent, saveStatus, forceSave } = useLocalJournal(contextKey);
     const [, forceUpdate] = useState(0); // Used to ensure toolbar active states update instantly
+
+    const handleClose = useCallback(() => {
+        forceSave();
+        onClose();
+    }, [forceSave, onClose]);
 
     const editor = useEditor({
         extensions: [
@@ -164,11 +169,11 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
     // Close on Escape
     useEffect(() => {
         const handler = (e) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape') handleClose();
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [onClose]);
+    }, [handleClose]);
 
     // Focus editor on open
     useEffect(() => {
@@ -196,7 +201,7 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
     return (
         <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center journal-backdrop"
-            onClick={onClose}
+            onClick={handleClose}
             {...BACKDROP}
         >
             <motion.div
@@ -226,24 +231,45 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                             {statusLabel || '\u00A0'}
                         </p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full transition-colors duration-200"
-                        style={{
-                            backgroundColor: 'var(--control-bg)',
-                            color: 'var(--fg-muted)',
-                            flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) =>
-                            (e.target.style.backgroundColor = 'var(--control-hover)')
-                        }
-                        onMouseLeave={(e) =>
-                            (e.target.style.backgroundColor = 'var(--control-bg)')
-                        }
-                        aria-label="Close journal"
-                    >
-                        <X size={16} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleClose}
+                            className="p-2 rounded-full transition-colors duration-200"
+                            style={{
+                                backgroundColor: 'var(--control-bg)',
+                                color: 'var(--fg)', // slightly darker than fg-muted to emphasize done
+                                flexShrink: 0,
+                            }}
+                            onMouseEnter={(e) =>
+                                (e.target.style.backgroundColor = 'rgba(74, 222, 128, 0.1)') // Subtly green hover
+                            }
+                            onMouseLeave={(e) =>
+                                (e.target.style.backgroundColor = 'var(--control-bg)')
+                            }
+                            aria-label="Save and close journal"
+                            title="Save & Close"
+                        >
+                            <Check size={16} style={{ color: 'var(--color-green, #4ade80)' }} />
+                        </button>
+                        <button
+                            onClick={handleClose}
+                            className="p-2 rounded-full transition-colors duration-200"
+                            style={{
+                                backgroundColor: 'var(--control-bg)',
+                                color: 'var(--fg-muted)',
+                                flexShrink: 0,
+                            }}
+                            onMouseEnter={(e) =>
+                                (e.target.style.backgroundColor = 'var(--control-hover)')
+                            }
+                            onMouseLeave={(e) =>
+                                (e.target.style.backgroundColor = 'var(--control-bg)')
+                            }
+                            aria-label="Close journal"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Toolbar */}
