@@ -18,15 +18,21 @@ function readAll() {
  *   saveStatus: 'idle' | 'saving' | 'saved'
  */
 export default function useLocalJournal(contextKey) {
-    const [content, setContentState] = useState('');
+    const [content, setContentState] = useState(() => {
+        const all = readAll();
+        return all[contextKey] || '';
+    });
     const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved
     const timerRef = useRef(null);
     const savedTimerRef = useRef(null);
+    const latestContentRef = useRef(content); // Synchronous tracking for unmounts
 
-    // Load entry whenever contextKey changes
+    // Sync state if contextKey changes while hook is still mounted
     useEffect(() => {
         const all = readAll();
-        setContentState(all[contextKey] || '');
+        const initialContent = all[contextKey] || '';
+        setContentState(initialContent);
+        latestContentRef.current = initialContent;
         setSaveStatus('idle');
 
         // Clear pending timers on key change
@@ -36,32 +42,50 @@ export default function useLocalJournal(contextKey) {
         };
     }, [contextKey]);
 
+    const forceSave = useCallback(() => {
+        clearTimeout(timerRef.current);
+        clearTimeout(savedTimerRef.current);
+
+        const value = latestContentRef.current;
+        const all = readAll();
+        const isEmpty = !value || value === '<p></p>' || value.trim() === '';
+
+        if (!isEmpty) {
+            all[contextKey] = value;
+        } else {
+            delete all[contextKey]; // clean up empty entries
+        }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+        setSaveStatus('saved');
+
+        savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }, [contextKey]);
+
     const setContent = useCallback(
         (value) => {
             setContentState(value);
+            latestContentRef.current = value; // Update ref synchronously
             setSaveStatus('saving');
 
             // Debounce the write
             clearTimeout(timerRef.current);
             timerRef.current = setTimeout(() => {
-                const all = readAll();
-                // Treat empty paragraphs as empty
-                const isEmpty = !value || value === '<p></p>' || value.trim() === '';
-                if (!isEmpty) {
-                    all[contextKey] = value;
-                } else {
-                    delete all[contextKey]; // clean up empty entries
-                }
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-                setSaveStatus('saved');
-
-                // Reset to idle after a brief flash
-                clearTimeout(savedTimerRef.current);
-                savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+                forceSave();
             }, 500);
         },
-        [contextKey],
+        [forceSave], // forceSave depends on contextKey
     );
 
-    return { content, setContent, saveStatus };
+    // Auto-save when the component entirely unmounts (e.g., overlay is closed)
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                // If there was a pending save, execute it immediately on unmount
+                forceSave();
+            }
+        };
+    }, [forceSave]);
+
+    return { content, setContent, saveStatus, forceSave };
 }
