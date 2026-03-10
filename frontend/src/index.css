@@ -448,6 +448,12 @@ body {
   line-height: 1.3;
 }
 
+.journal-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Placeholder */
 .journal-editor-content p.is-editor-empty:first-child::before {
   content: 'Start writing…';
