@@ -7,16 +7,24 @@ import ExportButton from './components/ExportButton';
 import JournalButton from './components/JournalButton';
 import JournalOverlay from './components/JournalOverlay';
 import Settings from './components/Settings';
-import AuthButton from './components/AuthButton';
+import UserProfile from './components/UserProfile';
 import useJournalContext from './hooks/useJournalContext';
 import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser } from './utils/api';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 
-const VIEW_TRANSITION = {
-  initial: { opacity: 0, y: 20, scale: 0.98 },
-  animate: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -20, scale: 0.98, transition: { duration: 0.25 } },
+const viewVariants = {
+  initial: (navDir) => {
+    if (navDir === 'left') return { opacity: 0, x: -60, scale: 0.98 };
+    if (navDir === 'right') return { opacity: 0, x: 60, scale: 0.98 };
+    return { opacity: 0, y: 20, scale: 0.98 };
+  },
+  animate: { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: 0.35, ease: 'easeOut' } },
+  exit: (navDir) => {
+    if (navDir === 'left') return { opacity: 0, x: 60, scale: 0.98, transition: { duration: 0.2 } };
+    if (navDir === 'right') return { opacity: 0, x: -60, scale: 0.98, transition: { duration: 0.2 } };
+    return { opacity: 0, y: -20, scale: 0.98, transition: { duration: 0.25 } };
+  },
 };
 
 export default function App() {
@@ -28,6 +36,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const navDirectionRef = useRef(null);
   const [heartbeat, setHeartbeat] = useState(true);
   const [theme, setTheme] = useState('light');
   const [defaultColor, setDefaultColor] = useState(() => {
@@ -36,6 +45,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return !!localStorage.getItem('lifedots-auth-token');
   });
+  const [user, setUser] = useState(null);
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
@@ -74,7 +84,10 @@ export default function App() {
         window.history.replaceState({}, '', basePath);
 
         getCurrentUser()
-          .then(() => hydrateRemoteSettings())
+          .then((u) => {
+            setUser(u);
+            return hydrateRemoteSettings();
+          })
           .then((isNewUser) => {
             if (isNewUser) setSettingsOpen(true);
           })
@@ -87,6 +100,9 @@ export default function App() {
     if (token) {
       setAuthToken(token);
       setIsLoggedIn(true);
+      getCurrentUser()
+        .then((u) => setUser(u))
+        .catch((err) => console.error('Failed to get user details:', err));
       hydrateRemoteSettings();
     }
   }, [hydrateRemoteSettings]);
@@ -121,8 +137,13 @@ export default function App() {
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('lifedots-auth-token');
+    localStorage.removeItem('lifedots-journal-entries');
+    localStorage.removeItem('lifedots-default-color');
     setAuthToken(null);
     setIsLoggedIn(false);
+
+    // Force a complete client reload to wipe any in-memory app state and settings
+    window.location.reload();
   }, []);
 
   const handleSaveDefaultColor = (newColor) => {
@@ -209,6 +230,65 @@ export default function App() {
     setRefreshKey((k) => k + 1);
   };
 
+  const handleNavigateYear = useCallback((direction) => {
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    setSelectedYear((prev) => {
+      if (prev === null) return prev;
+      const next = prev + direction;
+      if (next < 0) return 0;
+      if (next >= stats.totalYears) return stats.totalYears - 1;
+      return next;
+    });
+  }, [stats.totalYears]);
+
+  const handleNavigateMonth = useCallback((direction) => {
+    if (selectedMonth === null || selectedYear === null) return;
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    let newMonth = selectedMonth + direction;
+    let newYear = selectedYear;
+
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear -= 1;
+    } else if (newMonth > 11) {
+      newMonth = 0;
+      newYear += 1;
+    }
+
+    if (newYear < 0) {
+      newYear = 0;
+      newMonth = 0;
+    } else if (newYear >= stats.totalYears) {
+      newYear = stats.totalYears - 1;
+      newMonth = 11;
+    }
+
+    setSelectedMonth(newMonth);
+    setSelectedYear(newYear);
+  }, [selectedMonth, selectedYear, stats.totalYears]);
+
+  const handleNavigateDay = useCallback((direction) => {
+    if (selectedYear === null || selectedMonth === null || selectedDay === null) return;
+    navDirectionRef.current = direction > 0 ? 'right' : 'left';
+    const calYear = getBirthDate().getFullYear() + selectedYear;
+    const d = new Date(calYear, selectedMonth, selectedDay + direction);
+
+    // Do not navigate before birth date
+    if (d < getBirthDate()) {
+      return;
+    }
+
+    const newYearIndex = d.getFullYear() - getBirthDate().getFullYear();
+    // Do not navigate past max lifespan
+    if (newYearIndex >= stats.totalYears) {
+      return;
+    }
+
+    setSelectedDay(d.getDate());
+    setSelectedMonth(d.getMonth());
+    setSelectedYear(newYearIndex);
+  }, [selectedYear, selectedMonth, selectedDay, stats.totalYears]);
+
   const footerLabel = {
     months: 'Each dot is a month of your life',
     years: 'Each dot is a year of your life',
@@ -220,15 +300,21 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col items-center px-4 relative" style={{ paddingTop: '80px', paddingBottom: '48px' }}>
 
-      {/* Auth Button — top left */}
-      <AuthButton isLoggedIn={isLoggedIn} onLogin={handleLogin} />
+      {/* User Profile — top right (next to settings) */}
+      <UserProfile
+        user={user}
+        isLoggedIn={isLoggedIn}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+      />
 
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
-        className="fixed top-5 right-5 z-40 rounded-full transition-colors duration-200"
+        className="fixed top-5 right-5 z-40 rounded-full transition-colors duration-200 flex items-center justify-center"
         style={{
-          padding: '8px',
+          width: '40px',
+          height: '40px',
           backgroundColor: 'var(--control-bg)',
           border: '1px solid var(--control-border)',
           color: 'var(--fg-muted)',
@@ -236,7 +322,7 @@ export default function App() {
         aria-label="Settings"
         data-html2canvas-ignore="true"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
           <circle cx="12" cy="12" r="3" />
         </svg>
@@ -313,11 +399,16 @@ export default function App() {
       </div>
 
       {/* Grid Area */}
-      <main ref={gridRef} className="w-full max-w-4xl mx-auto" key={refreshKey}>
-        <AnimatePresence mode="wait">
+      <main ref={gridRef} className="w-full max-w-4xl mx-auto">
+        <AnimatePresence mode="wait" custom={navDirectionRef.current}>
           <motion.div
             key={viewMode + (selectedYear ?? '') + (selectedMonth ?? '') + (selectedDay ?? '')}
-            {...VIEW_TRANSITION}
+            custom={navDirectionRef.current}
+            variants={viewVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            onAnimationComplete={() => { navDirectionRef.current = null; }}
           >
             <DotGrid
               viewMode={viewMode}
@@ -328,8 +419,12 @@ export default function App() {
               onMonthClick={handleMonthClick}
               onMonthGridClick={handleMonthGridClick}
               onDayClick={handleDayClick}
+              onNavigateYear={handleNavigateYear}
+              onNavigateMonth={handleNavigateMonth}
+              onNavigateDay={handleNavigateDay}
               heartbeat={heartbeat}
               defaultColor={defaultColor}
+              updateTrigger={refreshKey}
             />
           </motion.div>
         </AnimatePresence>
