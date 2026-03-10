@@ -11,6 +11,7 @@ import FontFamily from '@tiptap/extension-font-family';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import TextAlign from '@tiptap/extension-text-align';
+import Link from '@tiptap/extension-link';
 import useLocalJournal from '../hooks/useLocalJournal';
 
 const BackspaceListFix = Extension.create({
@@ -138,6 +139,13 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
             TaskItem.configure({ nested: true }),
             BackspaceListFix,
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            Link.configure({
+                openOnClick: false,
+                HTMLAttributes: {
+                    class: 'journal-link',
+                },
+                autolink: true,
+            }),
         ],
         content: content || '',
         onUpdate: ({ editor: ed }) => {

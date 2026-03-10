@@ -128,7 +128,7 @@ function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartb
                 style={{
                     backgroundColor,
                     border,
-                    touchAction: 'none',
+                    touchAction: 'pan-y', // Allows vertical scrolling on phones
                     WebkitTouchCallout: 'none',
                     WebkitUserSelect: 'none',
                     userSelect: 'none'

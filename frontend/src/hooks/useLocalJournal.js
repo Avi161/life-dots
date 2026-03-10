@@ -48,7 +48,7 @@ export default function useLocalJournal(contextKey) {
 
         const value = latestContentRef.current;
         const all = readAll();
-        const isEmpty = !value || value === '<p></p>' || value.trim() === '';
+        const isEmpty = !value || value === '<p></p>' || value === '<p><br></p>' || value.trim() === '';
 
         if (!isEmpty) {
             all[contextKey] = value;
