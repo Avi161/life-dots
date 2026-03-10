@@ -4,8 +4,11 @@ import DotGrid from './components/DotGrid';
 import ThemeToggle from './components/ThemeToggle';
 import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
+import JournalButton from './components/JournalButton';
+import JournalOverlay from './components/JournalOverlay';
 import Settings from './components/Settings';
 import AuthButton from './components/AuthButton';
+import useJournalContext from './hooks/useJournalContext';
 import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser } from './utils/api';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
@@ -17,12 +20,13 @@ const VIEW_TRANSITION = {
 };
 
 export default function App() {
-  const [viewMode, setViewMode] = useState('months');
+  const [viewMode, setViewMode] = useState('years');
   const [selectedYear, setSelectedYear] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(null); // now stores calendar month (0-11)
   const [selectedDay, setSelectedDay] = useState(null);
   const [navStack, setNavStack] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [heartbeat, setHeartbeat] = useState(true);
   const [theme, setTheme] = useState('light');
@@ -35,6 +39,7 @@ export default function App() {
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
+  const { contextKey, displayTitle } = useJournalContext(viewMode, selectedYear, selectedMonth, selectedDay);
 
   const hydrateRemoteSettings = useCallback(() => {
     return fetchSettings()
@@ -256,6 +261,17 @@ export default function App() {
         refreshKey={refreshKey}
       />
 
+      {/* Journal Overlay */}
+      <AnimatePresence>
+        {journalOpen && (
+          <JournalOverlay
+            contextKey={contextKey}
+            displayTitle={displayTitle}
+            onClose={() => setJournalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <header className="w-full max-w-4xl mx-auto text-center" style={{ marginBottom: '28px' }}>
         <h1
@@ -289,6 +305,11 @@ export default function App() {
         />
         <ThemeToggle theme={theme} onToggle={toggleTheme} />
         <ExportButton targetRef={gridRef} />
+        <div
+          className="w-px h-5"
+          style={{ backgroundColor: 'var(--control-border)' }}
+        />
+        <JournalButton onClick={() => setJournalOpen(true)} />
       </div>
 
       {/* Grid Area */}

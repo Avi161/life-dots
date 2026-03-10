@@ -240,3 +240,221 @@ body {
   color: var(--fg-muted);
   font-weight: 300;
 }
+
+/* ── Journal Overlay ── */
+.journal-backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Desktop: resizable floating panel ── */
+.journal-panel {
+  background-color: var(--bg);
+  border: 1px solid var(--control-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 680px;
+  min-width: 300px;
+  min-height: 400px;
+  max-height: 80vh;
+  resize: both;
+}
+
+/* ── Mobile: full-screen takeover ── */
+@media (max-width: 767px) {
+  .journal-panel {
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: none;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 0;
+    resize: none;
+  }
+}
+
+.journal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 0 24px;
+  flex-shrink: 0;
+}
+
+/* ── Toolbar ── */
+.journal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--control-border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.journal-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.journal-toolbar-select {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  appearance: auto;
+}
+
+.journal-toolbar-select:hover {
+  background: var(--control-hover);
+}
+
+.journal-toolbar-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.journal-toolbar-btn:hover {
+  background-color: var(--control-hover);
+  color: var(--fg);
+}
+
+.journal-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--control-border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.journal-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.journal-color-swatch:hover {
+  transform: scale(1.25);
+}
+
+/* ── Editor area ── */
+.journal-editor-wrapper {
+  padding: 16px 24px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* TipTap / ProseMirror content styles */
+.journal-editor-content {
+  outline: none;
+  min-height: 200px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--fg);
+  caret-color: var(--fg);
+  letter-spacing: 0.01em;
+}
+
+.journal-editor-content p {
+  margin: 0 0 0.5em 0;
+}
+
+.journal-editor-content ul,
+.journal-editor-content ol {
+  padding-left: 1.5rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.journal-editor-content ul {
+  list-style-type: disc;
+}
+
+.journal-editor-content ol {
+  list-style-type: decimal;
+}
+
+.journal-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* TipTap Task Lists */
+.journal-editor-content ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.journal-editor-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+}
+
+.journal-editor-content ul[data-type="taskList"] li>label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.journal-editor-content ul[data-type="taskList"] li>label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.3rem;
+  cursor: pointer;
+  accent-color: var(--dot-current);
+}
+
+.journal-editor-content ul[data-type="taskList"] li>div {
+  flex: 1 1 auto;
+}
+
+/* TipTap Headings (Inline Simulation via FontSize) */
+
+.journal-editor-content h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 0.8em 0 0.4em 0;
+  line-height: 1.3;
+}
+
+.journal-editor-content h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 0.6em 0 0.3em 0;
+  line-height: 1.3;
+}
+
+/* Placeholder */
+.journal-editor-content p.is-editor-empty:first-child::before {
+  content: 'Start writing…';
+  color: var(--fg-muted);
+  font-weight: 300;
+  font-style: italic;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
