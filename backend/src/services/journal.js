@@ -27,18 +27,32 @@ export async function getEntry(supabase, userId, contextKey) {
 }
 
 export async function upsertEntry(supabase, userId, contextKey, content) {
-  const { data, error } = await supabase
+  // Manual upsert to avoid requiring a UNIQUE constraint
+  const { data: existing } = await supabase
     .from('journal_entries')
-    .upsert(
-      { user_id: userId, context_key: contextKey, content },
-      { onConflict: 'user_id,context_key' },
-    )
-    .select('id, context_key, content, created_at, updated_at')
-    .single();
+    .select('id')
+    .eq('user_id', userId)
+    .eq('context_key', contextKey)
+    .maybeSingle();
 
-  if (error) throw new DatabaseError(error.message);
-
-  return data;
+  if (existing) {
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select('id, context_key, content, created_at, updated_at')
+      .single();
+    if (error) throw new DatabaseError(error.message);
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from('journal_entries')
+      .insert({ user_id: userId, context_key: contextKey, content })
+      .select('id, context_key, content, created_at, updated_at')
+      .single();
+    if (error) throw new DatabaseError(error.message);
+    return data;
+  }
 }
 
 export async function updateEntry(supabase, userId, contextKey, content) {

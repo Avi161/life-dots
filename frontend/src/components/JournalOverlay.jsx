@@ -217,48 +217,49 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                 onClick={(e) => e.stopPropagation()}
                 {...PANEL}
             >
-                {/* Header */}
-                <div className="journal-header">
-                    <div>
-                        <h2
-                            className="text-base sm:text-lg font-semibold tracking-tight"
-                            style={{ color: 'var(--fg)' }}
-                        >
-                            {displayTitle}
-                        </h2>
-                        <p
-                            className="text-[10px] font-light tracking-wide"
-                            style={{
-                                color: 'var(--fg-muted)',
-                                marginTop: '2px',
-                                minHeight: '14px',
-                                transition: 'opacity 0.2s ease',
-                                opacity: statusLabel ? 1 : 0,
-                            }}
-                        >
-                            {statusLabel || '\u00A0'}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleClose}
-                            className="p-2 rounded-full transition-colors duration-200"
-                            style={{
-                                backgroundColor: 'var(--control-bg)',
-                                color: 'var(--fg)', // slightly darker than fg-muted to emphasize done
-                                flexShrink: 0,
-                            }}
-                            onMouseEnter={(e) =>
-                                (e.target.style.backgroundColor = 'rgba(74, 222, 128, 0.1)') // Subtly green hover
-                            }
-                            onMouseLeave={(e) =>
-                                (e.target.style.backgroundColor = 'var(--control-bg)')
-                            }
-                            aria-label="Save and close journal"
-                            title="Save & Close"
-                        >
-                            <Check size={16} style={{ color: 'var(--color-green, #4ade80)' }} />
-                        </button>
+                <div className="journal-header flex flex-row items-center justify-between gap-3 !pb-0 w-full" style={{ paddingBottom: 0 }}>
+                    <div className="flex items-center justify-between w-full">
+                        <div>
+                            <h2
+                                className="text-base sm:text-lg font-semibold tracking-tight"
+                                style={{ color: 'var(--fg)' }}
+                            >
+                                {displayTitle}
+                            </h2>
+                            <p
+                                className="text-[10px] font-light tracking-wide"
+                                style={{
+                                    color: 'var(--fg-muted)',
+                                    marginTop: '2px',
+                                    minHeight: '14px',
+                                    transition: 'opacity 0.2s ease',
+                                    opacity: statusLabel ? 1 : 0,
+                                }}
+                            >
+                                {statusLabel || '\u00A0'}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleClose}
+                                className="p-2 rounded-full transition-colors duration-200"
+                                style={{
+                                    backgroundColor: 'var(--control-bg)',
+                                    color: 'var(--fg)',
+                                    flexShrink: 0,
+                                }}
+                                onMouseEnter={(e) =>
+                                    (e.target.style.backgroundColor = 'rgba(74, 222, 128, 0.1)')
+                                }
+                                onMouseLeave={(e) =>
+                                    (e.target.style.backgroundColor = 'var(--control-bg)')
+                                }
+                                aria-label="Save and close journal"
+                                title="Save & Close"
+                            >
+                                <Check size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 

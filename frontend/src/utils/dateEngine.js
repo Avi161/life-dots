@@ -351,4 +351,58 @@ export function getLifeStats(now = new Date()) {
     };
 }
 
+/**
+ * Parse a context key into a JavaScript Date object for chronological sorting.
+ */
+export function parseContextKeyToDate(contextKey) {
+    if (contextKey === 'life') return BIRTH_DATE;
+
+    const parts = contextKey.split('-');
+    const yearIndex = parts.indexOf('year') !== -1 ? parseInt(parts[parts.indexOf('year') + 1], 10) : null;
+    const monthIndex = parts.indexOf('month') !== -1 ? parseInt(parts[parts.indexOf('month') + 1], 10) : null;
+    const day = parts.indexOf('day') !== -1 ? parseInt(parts[parts.indexOf('day') + 1], 10) : null;
+
+    if (yearIndex === null) return BIRTH_DATE; // Fallback
+
+    const calYear = getCalendarYear(yearIndex);
+
+    if (monthIndex === null) {
+        return new Date(calYear, 0, 1);
+    }
+    
+    if (day === null) {
+        return new Date(calYear, monthIndex, 1);
+    }
+
+    return new Date(calYear, monthIndex, day);
+}
+
+/**
+ * Format a context key into a highly readable string.
+ */
+export function formatContextKey(contextKey) {
+    if (contextKey === 'life') return 'Entire Life';
+
+    const parts = contextKey.split('-');
+    const yearIndex = parts.indexOf('year') !== -1 ? parseInt(parts[parts.indexOf('year') + 1], 10) : null;
+    const monthIndex = parts.indexOf('month') !== -1 ? parseInt(parts[parts.indexOf('month') + 1], 10) : null;
+    const day = parts.indexOf('day') !== -1 ? parseInt(parts[parts.indexOf('day') + 1], 10) : null;
+
+    if (yearIndex === null) return 'Unknown Date';
+
+    const calYear = getCalendarYear(yearIndex);
+
+    if (monthIndex === null) {
+        return `Year ${calYear}`;
+    }
+
+    const monthName = MONTH_NAMES_FULL[monthIndex];
+
+    if (day === null) {
+        return `${monthName} ${calYear}`;
+    }
+
+    return `${monthName} ${day}, ${calYear}`;
+}
+
 export { BIRTH_DATE, LIFESPAN_YEARS, TOTAL_MONTHS, MONTH_NAMES, MONTH_NAMES_FULL };

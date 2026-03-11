@@ -16,6 +16,7 @@ import {
     getHoursForDay,
     getLifeStats,
     getBirthDate,
+    getCalendarDate,
     TOTAL_MONTHS,
     LIFESPAN_YEARS,
     MONTH_NAMES,
@@ -49,7 +50,7 @@ function sizeClass(size) {
     return map[size] || map.sm;
 }
 
-const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null, defaultColor = 'theme' }) {
+const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, index, size = 'sm', heartbeat = true, color = null, defaultColor = 'theme', hasPendingTodo = false }) {
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
     const dotRef = useRef(null);
@@ -83,7 +84,7 @@ const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, ind
         }
     }, [onContextMenu, index]);
 
-    const baseStyle = `rounded-full transition-all duration-200 ${sizeClass(size)}`;
+    const baseStyle = `rounded-full transition-all duration-200 ${sizeClass(size)} relative`;
 
     let dotStyle;
     if (status === 'lived' || (status === 'current' && !heartbeat)) {
@@ -143,7 +144,19 @@ const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, ind
                 role="button"
                 tabIndex={0}
                 aria-label={label}
-            />
+            >
+                {hasPendingTodo && (
+                    <div
+                        className="absolute top-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full"
+                        style={{
+                            backgroundColor: '#ef4444',
+                            transform: 'translate(40%, -40%)',
+                            border: '1.5px solid var(--bg)',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        }}
+                    />
+                )}
+            </motion.div>
             {showTooltip && (
                 <Tooltip text={label} x={tooltipPos.x} y={tooltipPos.y} />
             )}
@@ -158,7 +171,8 @@ const Dot = React.memo(function Dot({ status, label, onClick, onContextMenu, ind
         prevProps.size === nextProps.size &&
         prevProps.heartbeat === nextProps.heartbeat &&
         prevProps.color === nextProps.color &&
-        prevProps.defaultColor === nextProps.defaultColor
+        prevProps.defaultColor === nextProps.defaultColor &&
+        prevProps.hasPendingTodo === nextProps.hasPendingTodo
     );
 });
 
@@ -177,6 +191,7 @@ export default function DotGrid({
     heartbeat = true,
     defaultColor = 'theme',
     updateTrigger = 0,
+    pendingTodoContexts = [],
 }) {
     const now = new Date();
     const stats = getLifeStats(now);
@@ -289,6 +304,7 @@ export default function DotGrid({
                                         color={dotMeta.color ?? null}
                                         defaultColor={defaultColor}
                                         onContextMenu={handleContextMenu}
+                                        hasPendingTodo={false} // Hours don't have to-dos
                                     />
                                     <span
                                         className="text-[9px] font-medium"
@@ -372,6 +388,7 @@ export default function DotGrid({
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
                                         defaultColor={defaultColor}
+                                        hasPendingTodo={pendingTodoContexts.includes(`year-${selectedYear}-month-${calMonth}-day-${d.day}`)}
                                     />
                                     <span
                                         className="text-[9px] font-medium"
@@ -458,6 +475,7 @@ export default function DotGrid({
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
                                         defaultColor={defaultColor}
+                                        hasPendingTodo={pendingTodoContexts.includes(`year-${selectedYear}-month-${m.calMonth}`)}
                                     />
                                     <span
                                         className="text-[10px] font-medium tracking-wide uppercase"
@@ -517,6 +535,7 @@ export default function DotGrid({
                                         heartbeat={heartbeat}
                                         color={dotMeta.color ?? null}
                                         defaultColor={defaultColor}
+                                        hasPendingTodo={pendingTodoContexts.includes(`year-${i}`)}
                                     />
                                     <TagBadge tag={dotMeta.tag} />
                                 </div>
@@ -561,6 +580,10 @@ export default function DotGrid({
                         const dotMeta = meta[dotId] ?? {};
                         const label = dotMeta.tag ? `${getMonthLabel(i)} · ${dotMeta.tag}` : getMonthLabel(i);
 
+                        const dateObj = getCalendarDate(i);
+                        const yIndex = dateObj.year - getBirthDate().getFullYear();
+                        const cKey = `year-${yIndex}-month-${dateObj.month}`;
+
                         return (
                             <Dot
                                 key={`month-${i}`}
@@ -573,6 +596,7 @@ export default function DotGrid({
                                 heartbeat={heartbeat}
                                 color={dotMeta.color ?? null}
                                 defaultColor={defaultColor}
+                                hasPendingTodo={pendingTodoContexts.includes(cKey)}
                             />
                         );
                         // Deliberately NOT adding TagBadge here to keep the intense grid clean!
