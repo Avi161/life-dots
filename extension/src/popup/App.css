@@ -1,0 +1,399 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  width: 400px;
+  height: 560px;
+  overflow: hidden;
+}
+
+/* ── Light Theme (default) ── */
+:root {
+  --bg: #ffffff;
+  --fg: #111111;
+  --fg-muted: #888888;
+  --dot-lived: #111111;
+  --dot-current: #111111;
+  --dot-future: #d4d4d4;
+  --dot-future-border: #c0c0c0;
+  --tooltip-bg: #111111;
+  --tooltip-fg: #ffffff;
+  --control-bg: #f5f5f5;
+  --control-hover: #e5e5e5;
+  --control-border: #e0e0e0;
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+  --bg: #000000;
+  --fg: #f5f5f5;
+  --fg-muted: #777777;
+  --dot-lived: #f5f5f5;
+  --dot-current: #f5f5f5;
+  --dot-future: #333333;
+  --dot-future-border: #444444;
+  --tooltip-bg: #f5f5f5;
+  --tooltip-fg: #000000;
+  --control-bg: #1a1a1a;
+  --control-hover: #2a2a2a;
+  --control-border: #333333;
+}
+
+#root {
+  background-color: var(--bg);
+  color: var(--fg);
+  width: 400px;
+  height: 560px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ── Dot Pulse Animation ── */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 var(--dot-current); opacity: 1; }
+  70% { box-shadow: 0 0 0 5px var(--dot-current); opacity: 0; }
+  100% { box-shadow: 0 0 0 0 var(--dot-current); opacity: 0; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+.dot-current {
+  animation: pulse-dot 2s ease-in-out infinite;
+  position: relative;
+}
+
+.dot-current::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ── Tab Switcher ── */
+.tab-switcher {
+  display: flex;
+  align-items: stretch;
+  border-top: 1px solid var(--control-border);
+  border-bottom: 1px solid var(--control-border);
+  flex-shrink: 0;
+  height: 36px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab-btn.active {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.tab-btn:not(.active):hover {
+  background: var(--control-hover);
+  color: var(--fg);
+}
+
+.tab-divider {
+  width: 1px;
+  background: var(--control-border);
+  flex-shrink: 0;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--fg-muted); border-radius: 3px; opacity: 0.5; }
+
+/* ── Shared control styles ── */
+.ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-muted);
+  border-radius: 6px;
+  padding: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+  font-family: inherit;
+}
+
+.ctrl-btn:hover {
+  background: var(--control-hover);
+  color: var(--fg);
+}
+
+/* ── View nav row ── */
+.view-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--control-border);
+}
+
+.view-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ViewSelector pill buttons — matches website exactly */
+.view-pill {
+  padding: 6px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.view-pill:hover {
+  opacity: 0.8;
+  transform: scale(1.04);
+}
+
+.view-pill:active {
+  transform: scale(0.96);
+}
+
+/* ── Tooltip ── */
+.ext-tooltip {
+  position: fixed;
+  pointer-events: none;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  font-family: inherit;
+}
+
+.ext-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Context menu ── */
+.context-menu {
+  position: fixed;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--control-border);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  min-width: 150px;
+  animation: ctx-in 0.1s ease-out both;
+}
+
+@keyframes ctx-in {
+  from { opacity: 0; transform: scale(0.94) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.swatch-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.swatch-btn:hover { transform: scale(1.3); }
+
+.swatch-clear {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.swatch-clear:hover { background: var(--control-hover); color: var(--fg); }
+
+.ctx-tag-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--fg);
+  caret-color: var(--fg);
+}
+
+.ctx-tag-input::placeholder { color: var(--fg-muted); font-weight: 300; }
+
+/* ── Journal Overlay ── */
+.journal-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.journal-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--control-border);
+  flex-shrink: 0;
+}
+
+.journal-textarea {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  caret-color: var(--fg);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 300;
+  line-height: 1.75;
+  padding: 16px 20px;
+  letter-spacing: 0.01em;
+}
+
+.journal-textarea::placeholder {
+  color: var(--fg-muted);
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* ── Todo item ── */
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.todo-checkbox {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--dot-lived);
+}
+
+.todo-text {
+  flex: 1;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  min-width: 0;
+}
+
+.todo-text.done {
+  text-decoration: line-through;
+  color: var(--fg-muted);
+}
+
+.todo-del-btn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-muted);
+  padding: 1px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.todo-item:hover .todo-del-btn { opacity: 1; }
+.todo-del-btn:hover { color: #ef4444; }
+
+/* ── Section divider ── */
+.section-divider {
+  height: 1px;
+  background: var(--control-border);
+  flex-shrink: 0;
+}
+
+/* ── Fade in animation ── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.2s ease-out both;
+}
+
+/* ── Spinner ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
