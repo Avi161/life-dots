@@ -27,19 +27,23 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
         setBirthDate(year, month, dayNum);
         setLifespanYears(lifespan);
 
-        if (isAuthenticated()) {
-            const m = String(month + 1).padStart(2, '0');
-            const d = String(dayNum).padStart(2, '0');
-            saveSettings({
-                birth_date: `${year}-${m}-${d}`,
-                expected_lifespan: Number(lifespan) || 80,
-                dot_meta: getAllDotMeta(),
-            }).catch((err) => console.error('Failed to save settings:', err));
-        }
-
         if (localDefaultColor !== defaultColor) {
             onSaveDefaultColor(localDefaultColor);
         }
+
+        if (isAuthenticated()) {
+            const m = String(month + 1).padStart(2, '0');
+            const d = String(dayNum).padStart(2, '0');
+            // Give the synchronous onSaveDefaultColor a moment to write to metaCache before reading
+            setTimeout(() => {
+                saveSettings({
+                    birth_date: `${year}-${m}-${d}`,
+                    expected_lifespan: Number(lifespan) || 80,
+                    dot_meta: getAllDotMeta(),
+                }).catch((err) => console.error('Failed to save settings:', err));
+            }, 0);
+        }
+
         onBirthDateChange();
         onClose();
     };
