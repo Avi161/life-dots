@@ -215,7 +215,6 @@ export default function App() {
   const handleLogout = useCallback(() => {
     localStorage.removeItem('lifedots-auth-token');
     localStorage.removeItem('lifedots-journal-entries');
-    localStorage.removeItem('lifedots-default-color');
     setAuthToken(null);
     setIsLoggedIn(false);
 
