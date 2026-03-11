@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { isAuthenticated, fetchJournalEntry, saveJournalEntry } from '../utils/api';
+import { isAuthenticated, fetchJournalEntry, saveJournalEntry, deleteJournalEntry } from '../utils/api';
 
 const STORAGE_KEY = 'lifedots-journal-entries';
 
@@ -117,7 +117,15 @@ export default function useLocalJournal(contextKey) {
         clearTimeout(timerRef.current);
         clearTimeout(savedTimerRef.current);
 
-        persist(contextKeyRef.current, latestContentRef.current);
+        const key = contextKeyRef.current;
+        const val = latestContentRef.current;
+        const isEmpty = !val || val === '<p></p>' || val === '<p><br></p>' || val.trim() === '';
+
+        if (isAuthenticated() && isEmpty) {
+            deleteJournalEntry(key).catch(() => {});
+        }
+
+        persist(key, val);
         setSaveStatus('saved');
 
         savedTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
@@ -144,7 +152,14 @@ export default function useLocalJournal(contextKey) {
             if (timerRef.current) {
                 clearTimeout(timerRef.current);
                 // Fire one final save synchronously (API call is fire-and-forget)
-                persist(contextKeyRef.current, latestContentRef.current);
+                const key = contextKeyRef.current;
+                const val = latestContentRef.current;
+                const isEmpty = !val || val === '<p></p>' || val === '<p><br></p>' || val.trim() === '';
+
+                if (isAuthenticated() && isEmpty) {
+                    deleteJournalEntry(key).catch(() => {});
+                }
+                persist(key, val);
             }
             clearTimeout(savedTimerRef.current);
         };

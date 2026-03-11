@@ -21,6 +21,12 @@ export async function apiFetch(path, options = {}) {
   }
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`HTTP Error ${res.status}: ${errorBody}`);
+  }
+
   const json = await res.json();
 
   if (!json.success) {
@@ -88,6 +94,12 @@ export async function saveJournalEntry(contextKey, content) {
   return apiFetch('/api/journal', {
     method: 'POST',
     body: JSON.stringify({ context_key: contextKey, content }),
+  });
+}
+
+export async function deleteJournalEntry(contextKey) {
+  return apiFetch(`/api/journal/${encodeURIComponent(contextKey)}`, {
+    method: 'DELETE',
   });
 }
 
