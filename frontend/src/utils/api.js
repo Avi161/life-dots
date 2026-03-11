@@ -90,3 +90,48 @@ export async function saveJournalEntry(contextKey, content) {
     body: JSON.stringify({ context_key: contextKey, content }),
   });
 }
+
+export async function fetchAllJournals() {
+  if (!authToken) return [];
+  return apiFetch('/api/journal/all');
+}
+
+export async function fetchAllTodos() {
+  if (!authToken) return [];
+  return apiFetch('/api/todos');
+}
+
+export async function fetchTodos(contextKey) {
+  if (!authToken) return [];
+  return apiFetch(`/api/todos/${encodeURIComponent(contextKey)}`);
+}
+
+export async function createTodo(contextKey, task, dueDate = null) {
+  return apiFetch('/api/todos', {
+    method: 'POST',
+    body: JSON.stringify({ context_key: contextKey, task, due_date: dueDate }),
+  });
+}
+
+export async function updateTodo(id, updates) {
+  return apiFetch(`/api/todos/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function deleteTodo(id) {
+  const headers = {};
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+  const res = await fetch(`${API_BASE}/api/todos/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!res.ok) {
+    throw new Error('Failed to delete to-do');
+  }
+  return true;
+}
+

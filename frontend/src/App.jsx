@@ -6,12 +6,17 @@ import ViewSelector from './components/ViewSelector';
 import ExportButton from './components/ExportButton';
 import JournalButton from './components/JournalButton';
 import JournalOverlay from './components/JournalOverlay';
+import TodoButton from './components/TodoButton';
+import TodoOverlay from './components/TodoOverlay';
 import Settings from './components/Settings';
 import UserProfile from './components/UserProfile';
 import useJournalContext from './hooks/useJournalContext';
-import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser } from './utils/api';
+import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser, fetchAllTodos } from './utils/api';
 import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
+import AllJournalsModal from './components/AllJournalsModal';
+import AllTodosModal from './components/AllTodosModal';
+import { ListTodo, BookOpen, CalendarHeart } from 'lucide-react';
 
 const viewVariants = {
   initial: (navDir) => {
@@ -35,6 +40,7 @@ export default function App() {
   const [navStack, setNavStack] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [todoOpen, setTodoOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const navDirectionRef = useRef(null);
   const [heartbeat, setHeartbeat] = useState(true);
@@ -46,6 +52,9 @@ export default function App() {
     return !!localStorage.getItem('lifedots-auth-token');
   });
   const [user, setUser] = useState(null);
+  const [isAllJournalsOpen, setIsAllJournalsOpen] = useState(false);
+  const [isAllTodosOpen, setIsAllTodosOpen] = useState(false);
+  const [pendingTodoContexts, setPendingTodoContexts] = useState([]);
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
@@ -68,6 +77,71 @@ export default function App() {
       });
   }, []);
 
+  const refreshPendingTodos = useCallback(async () => {
+    if (!isAuthenticated()) return;
+    try {
+      const todos = await fetchAllTodos();
+      const pendingKeys = todos.filter(t => !t.is_completed).map(t => t.context_key);
+      setPendingTodoContexts([...new Set(pendingKeys)]);
+    } catch (err) {
+      console.error('Failed to fetch pending todos:', err);
+    }
+  }, []);
+
+  const jumpToToday = useCallback(() => {
+    const today = new Date();
+    const birth = getBirthDate();
+    if (!birth || today < birth) return;
+
+    const yearIndex = today.getFullYear() - birth.getFullYear();
+    const month = today.getMonth();
+    const day = today.getDate();
+
+    if (yearIndex >= stats.totalYears) return;
+
+    setSelectedYear(yearIndex);
+    setSelectedMonth(month);
+    setSelectedDay(day);
+    setNavStack(['years', 'singleYear', 'singleMonth']);
+    setViewMode('singleDay');
+  }, [stats.totalYears]);
+
+  const handleJumpToContext = useCallback((ctx) => {
+    if (ctx === 'life') {
+      setViewMode('years');
+      setNavStack([]);
+      setSelectedYear(null);
+      setSelectedMonth(null);
+      setSelectedDay(null);
+      return;
+    }
+
+    const parts = ctx.split('-');
+    if (parts[0] === 'year' && parts[1]) {
+      const y = parseInt(parts[1], 10);
+      setSelectedYear(y);
+      if (parts[2] === 'month' && parts[3]) {
+        const m = parseInt(parts[3], 10);
+        setSelectedMonth(m);
+        if (parts[4] === 'day' && parts[5]) {
+          const d = parseInt(parts[5], 10);
+          setSelectedDay(d);
+          setViewMode('singleDay');
+          setNavStack(['years', 'singleYear', 'singleMonth']);
+        } else {
+          setViewMode('singleMonth');
+          setNavStack(['years', 'singleYear']);
+          setSelectedDay(null);
+        }
+      } else {
+        setViewMode('singleYear');
+        setNavStack(['years']);
+        setSelectedMonth(null);
+        setSelectedDay(null);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const basePath = import.meta.env.BASE_URL || '/';
 
@@ -85,7 +159,7 @@ export default function App() {
 
         getCurrentUser()
           .then((u) => {
-            setUser(u);
+            setUser(u.user ? u.user : u);
             return hydrateRemoteSettings();
           })
           .then((isNewUser) => {
@@ -101,11 +175,14 @@ export default function App() {
       setAuthToken(token);
       setIsLoggedIn(true);
       getCurrentUser()
-        .then((u) => setUser(u))
+        .then((u) => setUser(u.user ? u.user : u))
         .catch((err) => console.error('Failed to get user details:', err));
-      hydrateRemoteSettings();
+      hydrateRemoteSettings().then((isNewUser) => {
+        if (isNewUser) setSettingsOpen(true);
+      });
+      refreshPendingTodos();
     }
-  }, [hydrateRemoteSettings]);
+  }, [hydrateRemoteSettings, refreshPendingTodos]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -308,6 +385,44 @@ export default function App() {
         onLogout={handleLogout}
       />
 
+      {/* All To-Dos button — top right */}
+      <button
+        onClick={() => setIsAllTodosOpen(true)}
+        className="fixed top-5 z-40 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 hover:opacity-80 active:scale-95"
+        style={{
+          right: '7.75rem',
+          width: '40px',
+          height: '40px',
+          backgroundColor: 'var(--control-bg)',
+          border: '1px solid var(--control-border)',
+          color: 'var(--fg-muted)',
+        }}
+        aria-label="All To-Dos"
+        title="All To-Dos"
+        data-html2canvas-ignore="true"
+      >
+        <ListTodo size={18} strokeWidth={2} />
+      </button>
+
+      {/* All Journals button — top right */}
+      <button
+        onClick={() => setIsAllJournalsOpen(true)}
+        className="fixed top-5 z-40 rounded-full transition-all duration-200 flex items-center justify-center hover:scale-110 hover:opacity-80 active:scale-95"
+        style={{
+          right: '11rem',
+          width: '40px',
+          height: '40px',
+          backgroundColor: 'var(--control-bg)',
+          border: '1px solid var(--control-border)',
+          color: 'var(--fg-muted)',
+        }}
+        aria-label="All Journals"
+        title="All Journals"
+        data-html2canvas-ignore="true"
+      >
+        <BookOpen size={18} strokeWidth={2} />
+      </button>
+
       {/* Settings button — top right */}
       <button
         onClick={() => setSettingsOpen(true)}
@@ -358,6 +473,30 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {todoOpen && (
+          <TodoOverlay
+            contextKey={contextKey}
+            displayTitle={displayTitle}
+            onClose={() => setTodoOpen(false)}
+            onTodosChanged={refreshPendingTodos}
+          />
+        )}
+      </AnimatePresence>
+
+      <AllJournalsModal
+        isOpen={isAllJournalsOpen}
+        onClose={() => setIsAllJournalsOpen(false)}
+        onJump={handleJumpToContext}
+      />
+
+      <AllTodosModal
+        isOpen={isAllTodosOpen}
+        onClose={() => setIsAllTodosOpen(false)}
+        onJump={handleJumpToContext}
+        onTodosChanged={refreshPendingTodos}
+      />
+
       {/* Header */}
       <header className="w-full max-w-4xl mx-auto text-center" style={{ marginBottom: '28px' }}>
         <h1
@@ -396,6 +535,23 @@ export default function App() {
           style={{ backgroundColor: 'var(--control-border)' }}
         />
         <JournalButton onClick={() => setJournalOpen(true)} />
+        <TodoButton onClick={() => setTodoOpen(true)} />
+        <div
+          className="w-px h-5"
+          style={{ backgroundColor: 'var(--control-border)' }}
+        />
+        <button
+          onClick={jumpToToday}
+          className="p-[6px] rounded flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+          style={{
+            color: 'var(--fg)',
+            backgroundColor: 'var(--control-bg)',
+            border: '1px solid var(--control-border)',
+          }}
+          title="Jump to Today"
+        >
+          <CalendarHeart size={16} />
+        </button>
       </div>
 
       {/* Grid Area */}
@@ -425,6 +581,7 @@ export default function App() {
               heartbeat={heartbeat}
               defaultColor={defaultColor}
               updateTrigger={refreshKey}
+              pendingTodoContexts={pendingTodoContexts}
             />
           </motion.div>
         </AnimatePresence>

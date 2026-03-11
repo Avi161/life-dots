@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', journalController.list);
+router.get('/all', journalController.list);
 router.get('/:key', journalController.getByKey);
 router.post('/', journalController.create);
 router.put('/:key', journalController.update);
