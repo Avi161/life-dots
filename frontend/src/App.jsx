@@ -65,7 +65,14 @@ export default function App() {
       .then((remote) => {
         if (!remote) return false;
         hydrateFromRemote(remote);
-        if (remote.dot_meta) hydrateMetaFromRemote(remote.dot_meta);
+        if (remote.dot_meta) {
+          hydrateMetaFromRemote(remote.dot_meta);
+          if (remote.dot_meta['__defaultColor'] && remote.dot_meta['__defaultColor'].color) {
+            const remoteColor = remote.dot_meta['__defaultColor'].color;
+            setDefaultColor(remoteColor);
+            localStorage.setItem('lifedots-default-color', remoteColor);
+          }
+        }
         if (remote.theme) setTheme(remote.theme);
         if (remote.heartbeat_enabled != null) setHeartbeat(remote.heartbeat_enabled);
         setRefreshKey((k) => k + 1);
@@ -229,10 +236,13 @@ export default function App() {
     const oldColor = defaultColor === 'theme' ? null : defaultColor;
 
     for (const [dotId, meta] of Object.entries(allMeta)) {
+      if (dotId === '__defaultColor') continue;
       if (meta.color === newColor) {
         setDotMeta(dotId, { color: oldColor, tag: meta.tag });
       }
     }
+
+    setDotMeta('__defaultColor', { color: newColor, tag: null });
 
     localStorage.setItem('lifedots-default-color', newColor);
     setDefaultColor(newColor);
