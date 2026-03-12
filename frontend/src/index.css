@@ -464,3 +464,15 @@ body {
   height: 0;
   pointer-events: none;
 }
+
+/* ── Journal Search Highlights ── */
+.journal-search-result mark {
+  background-color: #fbbf24;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+[data-theme="dark"] .journal-search-result mark {
+  background-color: #b45309;
+}
