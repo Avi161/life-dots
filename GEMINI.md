@@ -68,6 +68,3 @@ The project is split into a separate frontend and backend, using modern JS tooli
 - When altering UI flows, remember the user has explicitly requested to move from dense modals to full-page, breathable views.
 - Ensure any database schema changes are reflected in Zod schemas on the backend and in any static type/prop declarations on the frontend.
 - Provide descriptive terminal instructions to run `npm run dev` in both directories for local testing. Wait on concurrent port mapping (Vite: 5173, Express backend: varies).
-
-
-haha
