@@ -25,7 +25,7 @@ export async function exchangeCodeForSession(code) {
 export async function getUserProfile(supabase, userId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, birth_date, expected_lifespan, created_at')
+    .select('id, username')
     .eq('id', userId)
     .maybeSingle();
 
