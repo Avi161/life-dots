@@ -166,13 +166,18 @@ export default function App() {
 
         getCurrentUser()
           .then((u) => {
-            setUser(u.user ? u.user : u);
+            setUser(u);
             return hydrateRemoteSettings();
           })
           .then((isNewUser) => {
             if (isNewUser) setSettingsOpen(true);
           })
-          .catch((err) => console.error('Auth init failed:', err));
+          .catch((err) => {
+            console.error('Auth init failed:', err);
+            localStorage.removeItem('lifedots-auth-token');
+            setAuthToken(null);
+            setIsLoggedIn(false);
+          });
         return;
       }
     }
@@ -182,12 +187,20 @@ export default function App() {
       setAuthToken(token);
       setIsLoggedIn(true);
       getCurrentUser()
-        .then((u) => setUser(u.user ? u.user : u))
-        .catch((err) => console.error('Failed to get user details:', err));
-      hydrateRemoteSettings().then((isNewUser) => {
-        if (isNewUser) setSettingsOpen(true);
-      });
-      refreshPendingTodos();
+        .then((u) => {
+          setUser(u);
+          return hydrateRemoteSettings();
+        })
+        .then((isNewUser) => {
+          if (isNewUser) setSettingsOpen(true);
+          refreshPendingTodos();
+        })
+        .catch((err) => {
+          console.error('Failed to get user details:', err);
+          localStorage.removeItem('lifedots-auth-token');
+          setAuthToken(null);
+          setIsLoggedIn(false);
+        });
     }
   }, [hydrateRemoteSettings, refreshPendingTodos]);
 

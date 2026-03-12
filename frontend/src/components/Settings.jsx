@@ -102,12 +102,20 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                         </span>
                         <input
                             type="number"
-                            min="1920"
-                            max="2025"
+                            min="1900"
+                            max={new Date().getFullYear()}
                             value={year}
                             onChange={(e) => {
                                 const val = e.target.value;
                                 setYear(val === '' ? '' : parseInt(val) || 2000);
+                            }}
+                            onBlur={() => {
+                                const val = parseInt(year);
+                                if (isNaN(val)) {
+                                    setYear(2000);
+                                } else {
+                                    setYear(Math.max(1900, Math.min(val, new Date().getFullYear())));
+                                }
                             }}
                             className="w-full rounded-lg text-sm outline-none"
                             style={inputStyle}

@@ -196,13 +196,10 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                 ? 'Saved ✓'
                 : '';
 
-    const isColorActive = useCallback(
-        (colorValue) => {
-            if (!editor) return false;
-            return editor.isActive('textStyle', { color: colorValue });
-        },
-        [editor],
-    );
+    const isColorActive = (colorValue) => {
+        if (!editor) return false;
+        return editor.isActive('textStyle', { color: colorValue });
+    };
 
     if (!editor) return null;
 

@@ -27,6 +27,10 @@ export async function apiFetch(path, options = {}) {
     throw new Error(`HTTP Error ${res.status}: ${errorBody}`);
   }
 
+  if (res.status === 204) {
+    return true;
+  }
+
   const json = await res.json();
 
   if (!json.success) {
@@ -41,9 +45,6 @@ export async function getGoogleAuthUrl(redirectTo) {
   return apiFetch(`/api/auth/google${params}`);
 }
 
-export async function exchangeAuthCode(code) {
-  return apiFetch(`/api/auth/callback?code=${encodeURIComponent(code)}`);
-}
 
 export async function getCurrentUser() {
   return apiFetch('/api/auth/me');
@@ -105,7 +106,7 @@ export async function deleteJournalEntry(contextKey) {
 
 export async function fetchAllJournals() {
   if (!authToken) return [];
-  return apiFetch('/api/journal/all');
+  return apiFetch('/api/journal');
 }
 
 export async function fetchAllTodos() {
@@ -133,17 +134,6 @@ export async function updateTodo(id, updates) {
 }
 
 export async function deleteTodo(id) {
-  const headers = {};
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
-  const res = await fetch(`${API_BASE}/api/todos/${encodeURIComponent(id)}`, {
-    method: 'DELETE',
-    headers,
-  });
-  if (!res.ok) {
-    throw new Error('Failed to delete to-do');
-  }
-  return true;
+  return apiFetch(`/api/todos/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 

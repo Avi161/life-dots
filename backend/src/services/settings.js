@@ -28,9 +28,10 @@ export async function updateSettings(supabase, userId, updates) {
     .update(updates)
     .eq('id', userId)
     .select(SETTINGS_COLUMNS)
-    .single();
+    .maybeSingle();
 
   if (error) throw new DatabaseError(error.message);
+  if (!data) throw new Error('Profile not found. Please log in again.');
 
   return data;
 }
