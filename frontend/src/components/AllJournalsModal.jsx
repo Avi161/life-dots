@@ -44,7 +44,11 @@ export default function AllJournalsModal({ isOpen, onClose, onJump }) {
     );
 
     const filteredJournals = useMemo(
-        () => strippedCache.filter(j => matchesSearch(j._stripped, searchText)),
+        () => strippedCache.filter(j => {
+            const textMatch = matchesSearch(j._stripped, searchText);
+            const dateMatch = matchesSearch(formatContextKey(j.context_key), searchText);
+            return textMatch || dateMatch;
+        }),
         [strippedCache, searchText]
     );
 
