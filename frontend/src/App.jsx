@@ -12,7 +12,7 @@ import Settings from './components/Settings';
 import UserProfile from './components/UserProfile';
 import useJournalContext from './hooks/useJournalContext';
 import { fetchSettings, saveSettings, isAuthenticated, setAuthToken, getGoogleAuthUrl, getCurrentUser, fetchAllTodos } from './utils/api';
-import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote } from './utils/dateEngine';
+import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote, formatContextKey } from './utils/dateEngine';
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 import AllJournalsModal from './components/AllJournalsModal';
 import AllTodosModal from './components/AllTodosModal';
@@ -61,10 +61,14 @@ export default function App() {
   const [isAllJournalsOpen, setIsAllJournalsOpen] = useState(false);
   const [isAllTodosOpen, setIsAllTodosOpen] = useState(false);
   const [pendingTodoContexts, setPendingTodoContexts] = useState([]);
+  const [directJournalInfo, setDirectJournalInfo] = useState(null);
 
   const gridRef = useRef(null);
   const stats = getLifeStats();
   const { contextKey, displayTitle } = useJournalContext(viewMode, selectedYear, selectedMonth, selectedDay);
+
+  const activeContextKey = directJournalInfo ? directJournalInfo.contextKey : contextKey;
+  const activeDisplayTitle = directJournalInfo ? directJournalInfo.displayTitle : displayTitle;
 
   const hydrateRemoteSettings = useCallback(() => {
     return fetchSettings()
@@ -161,6 +165,16 @@ export default function App() {
         setSelectedDay(null);
       }
     }
+  }, []);
+
+  const handleOpenJournalFromAll = useCallback((key) => {
+    setDirectJournalInfo({
+      contextKey: key,
+      displayTitle: formatContextKey(key),
+      reopenAllJournals: true
+    });
+    setIsAllJournalsOpen(false);
+    setJournalOpen(true);
   }, []);
 
   useEffect(() => {
@@ -517,9 +531,16 @@ export default function App() {
       <AnimatePresence>
         {journalOpen && (
           <JournalOverlay
-            contextKey={contextKey}
-            displayTitle={displayTitle}
-            onClose={() => setJournalOpen(false)}
+            contextKey={activeContextKey}
+            displayTitle={activeDisplayTitle}
+            onClose={() => {
+              setJournalOpen(false);
+              if (directJournalInfo && directJournalInfo.reopenAllJournals) {
+                // small delay so animation doesn't look jarring
+                setTimeout(() => setIsAllJournalsOpen(true), 150);
+              }
+              setDirectJournalInfo(null);
+            }}
             journalFont={journalFont}
             journalFontSize={journalFontSize}
           />
@@ -541,6 +562,7 @@ export default function App() {
         isOpen={isAllJournalsOpen}
         onClose={() => setIsAllJournalsOpen(false)}
         onJump={handleJumpToContext}
+        onOpenJournal={handleOpenJournalFromAll}
       />
 
       <AllTodosModal
