@@ -345,11 +345,11 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                             className="w-full rounded-lg text-sm outline-none"
                             style={inputStyle}
                         >
-                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="Inter, sans-serif">Inter</option>
                             <option value="Arial, sans-serif">Arial</option>
-                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                            <option value="Times New Roman, Times, serif">Times New Roman</option>
                             <option value="Georgia, serif">Georgia</option>
-                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                            <option value="Courier New, Courier, monospace">Courier New</option>
                         </select>
                         <select
                             value={localFontSize}

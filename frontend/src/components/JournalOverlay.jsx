@@ -119,11 +119,11 @@ function ColorSwatch({ color, active, onClick }) {
 }
 
 const FONT_OPTIONS = [
-    { value: "'Inter', sans-serif", label: 'Inter' },
+    { value: 'Inter, sans-serif', label: 'Inter' },
     { value: 'Arial, sans-serif', label: 'Arial' },
-    { value: "'Times New Roman', Times, serif", label: 'Times New Roman' },
+    { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
     { value: 'Georgia, serif', label: 'Georgia' },
-    { value: "'Courier New', Courier, monospace", label: 'Courier New' },
+    { value: 'Courier New, Courier, monospace', label: 'Courier New' },
 ];
 
 const SIZE_OPTIONS = [
@@ -137,8 +137,11 @@ const SIZE_OPTIONS = [
     { value: '30px', label: '30' },
 ];
 
+// Strip quotes to normalize font names (TipTap's parseHTML strips them)
+const normalizeFont = (f) => (f ? f.replace(/['"]+ /g, '').replace(/['"]+ /g, '').replace(/['"]/g, '') : f);
+
 // Resolve 'default' to actual values
-const resolveFont = (f) => (f && f !== 'default' ? f : "'Inter', sans-serif");
+const resolveFont = (f) => (f && f !== 'default' ? normalizeFont(f) : 'Inter, sans-serif');
 const resolveSize = (s) => (s && s !== 'default' ? s : '14px');
 
 export default function JournalOverlay({ contextKey, displayTitle, onClose, journalFont = 'default', journalFontSize = 'default' }) {
@@ -260,7 +263,7 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose, jour
     };
 
     // Current cursor font/size (from mark or fallback to default)
-    const cursorFont = editor?.getAttributes('textStyle').fontFamily || defaultFont;
+    const cursorFont = normalizeFont(editor?.getAttributes('textStyle').fontFamily) || defaultFont;
     const cursorSize = editor?.getAttributes('textStyle').fontSize || defaultSize;
 
     if (!editor) return null;

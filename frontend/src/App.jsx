@@ -53,7 +53,7 @@ export default function App() {
   });
   const [user, setUser] = useState(null);
   const [journalFont, setJournalFont] = useState(() => {
-    return localStorage.getItem('lifedots-journal-font') || "'Inter', sans-serif";
+    return localStorage.getItem('lifedots-journal-font') || 'Inter, sans-serif';
   });
   const [journalFontSize, setJournalFontSize] = useState(() => {
     return localStorage.getItem('lifedots-journal-font-size') || '14px';
