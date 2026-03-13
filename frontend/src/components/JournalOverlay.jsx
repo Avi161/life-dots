@@ -118,7 +118,12 @@ function ColorSwatch({ color, active, onClick }) {
     );
 }
 
-export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
+const FONT_SIZE_OFFSET = {
+    "'Times New Roman', Times, serif": 2,
+    "Georgia, serif": 1,
+};
+
+export default function JournalOverlay({ contextKey, displayTitle, onClose, journalFont = 'default', journalFontSize = 'default' }) {
     const { content, setContent, saveStatus, forceSave, isLoading } = useLocalJournal(contextKey);
     const [, forceUpdate] = useState(0); // Used to ensure toolbar active states update instantly
 
@@ -201,6 +206,13 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
         return editor.isActive('textStyle', { color: colorValue });
     };
 
+    const getComputedFontSize = (font, size) => {
+        let baseSize = size === 'default' ? 14 : parseInt(size, 10);
+        if (isNaN(baseSize)) baseSize = 14;
+        const offset = FONT_SIZE_OFFSET[font] || 0;
+        return `${baseSize + offset}px`;
+    };
+
     if (!editor) return null;
 
     return (
@@ -266,9 +278,9 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                         <select
                             className="journal-toolbar-select"
                             style={{ minWidth: '110px' }}
-                            value={editor.getAttributes('textStyle').fontFamily || 'default'}
+                            value={editor.getAttributes('textStyle').fontFamily || (journalFont === 'default' ? 'unset' : journalFont)}
                             onChange={(e) => {
-                                if (e.target.value === 'default') {
+                                if (e.target.value === 'unset') {
                                     editor.chain().focus().unsetFontFamily().run();
                                 } else {
                                     editor.chain().focus().setFontFamily(e.target.value).run();
@@ -276,7 +288,8 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                             }}
                             title="Font Family"
                         >
-                            <option value="default">Inter (Default)</option>
+                            <option value="unset">Default</option>
+                            <option value="'Inter', sans-serif">Inter</option>
                             <option value="Arial, sans-serif">Arial</option>
                             <option value="'Times New Roman', Times, serif">Times New Roman</option>
                             <option value="Georgia, serif">Georgia</option>
@@ -285,9 +298,9 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
 
                         <select
                             className="journal-toolbar-select"
-                            value={editor.getAttributes('textStyle').fontSize || 'default'}
+                            value={editor.getAttributes('textStyle').fontSize || (journalFontSize === 'default' ? '14px' : journalFontSize)}
                             onChange={(e) => {
-                                if (e.target.value === 'default') {
+                                if (e.target.value === 'unset') {
                                     editor.chain().focus().unsetFontSize().run();
                                 } else {
                                     editor.chain().focus().setFontSize(e.target.value).run();
@@ -295,9 +308,10 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                             }}
                             title="Font Size"
                         >
+                            <option value="unset">Default</option>
                             <option value="10px">10</option>
                             <option value="12px">12</option>
-                            <option value="default">14</option>
+                            <option value="14px">14</option>
                             <option value="16px">16</option>
                             <option value="18px">18</option>
                             <option value="20px">20</option>
@@ -409,7 +423,14 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                 </div>
 
                 {/* Editor */}
-                <div className="journal-editor-wrapper relative" style={{ minHeight: '300px' }}>
+                <div 
+                    className="journal-editor-wrapper relative" 
+                    style={{ 
+                        minHeight: '300px',
+                        '--journal-font': journalFont === 'default' ? 'var(--font-sans)' : journalFont,
+                        '--journal-font-size': getComputedFontSize(journalFont, journalFontSize)
+                    }}
+                >
                     {/* Loading Overlay */}
                     {isLoading && (
                         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-b-md" style={{ backgroundColor: 'var(--bg)' }}>

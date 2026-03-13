@@ -3,12 +3,14 @@ import { getBirthDate, setBirthDate, setLifespanYears, getLifespanYears, MONTH_N
 import { saveSettings, isAuthenticated } from '../utils/api';
 import { PALETTE } from '../utils/dotMeta';
 
-export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange, defaultColor, onSaveDefaultColor, isLoggedIn, onLogout, refreshKey }) {
+export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat, onHeartbeatChange, defaultColor, onSaveDefaultColor, isLoggedIn, onLogout, refreshKey, journalFont = 'default', journalFontSize = 'default', onSaveFont }) {
     const [year, setYear] = useState(() => getBirthDate().getFullYear());
     const [month, setMonth] = useState(() => getBirthDate().getMonth());
     const [day, setDay] = useState(() => String(getBirthDate().getDate()));
     const [lifespan, setLifespan] = useState(() => getLifespanYears());
     const [localDefaultColor, setLocalDefaultColor] = useState(defaultColor);
+    const [localFont, setLocalFont] = useState(journalFont);
+    const [localFontSize, setLocalFontSize] = useState(journalFontSize);
 
     useEffect(() => {
         const b = getBirthDate();
@@ -17,7 +19,9 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
         setDay(String(b.getDate()));
         setLifespan(getLifespanYears());
         setLocalDefaultColor(defaultColor);
-    }, [isOpen, defaultColor, refreshKey]);
+        setLocalFont(journalFont);
+        setLocalFontSize(journalFontSize);
+    }, [isOpen, defaultColor, refreshKey, journalFont, journalFontSize]);
 
     if (!isOpen) return null;
 
@@ -26,17 +30,29 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
         setBirthDate(year, month, dayNum);
         setLifespanYears(lifespan);
 
-        if (localDefaultColor !== defaultColor) {
-            onSaveDefaultColor(localDefaultColor);
-        }
+        let updates = {};
 
         if (isAuthenticated()) {
             const m = String(month + 1).padStart(2, '0');
             const d = String(dayNum).padStart(2, '0');
-            saveSettings({
-                birth_date: `${year}-${m}-${d}`,
-                expected_lifespan: Number(lifespan) || 80,
-            }).catch((err) => console.error('Failed to save settings:', err));
+            updates.birth_date = `${year}-${m}-${d}`;
+            updates.expected_lifespan = Number(lifespan) || 80;
+        }
+
+        if (localDefaultColor !== defaultColor) {
+            onSaveDefaultColor(localDefaultColor);
+        }
+
+        if (localFont !== journalFont || localFontSize !== journalFontSize) {
+            onSaveFont(localFont, localFontSize, true); // Update state, skip DB
+            if (isAuthenticated()) {
+                updates.journal_font = localFont;
+                updates.journal_font_size = localFontSize;
+            }
+        }
+
+        if (isAuthenticated() && Object.keys(updates).length > 0) {
+            saveSettings(updates).catch((err) => console.error('Failed to save settings:', err));
         }
 
         onBirthDateChange();
@@ -307,6 +323,50 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                             }}
                         />
                     </button>
+                </div>
+
+                <div style={{ marginBottom: '28px' }}>
+                    <span
+                        className="text-xs font-medium block"
+                        style={{ color: 'var(--fg)', marginBottom: '8px' }}
+                    >
+                        Default Journal Font
+                    </span>
+                    <span
+                        className="text-[10px] font-light block"
+                        style={{ color: 'var(--fg-muted)', marginBottom: '12px' }}
+                    >
+                        Base font for unmarked text in your journals
+                    </span>
+                    <div className="flex gap-3">
+                        <select
+                            value={localFont}
+                            onChange={(e) => setLocalFont(e.target.value)}
+                            className="w-full rounded-lg text-sm outline-none"
+                            style={inputStyle}
+                        >
+                            <option value="default">Inter (Default)</option>
+                            <option value="Arial, sans-serif">Arial</option>
+                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                            <option value="Georgia, serif">Georgia</option>
+                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                        </select>
+                        <select
+                            value={localFontSize}
+                            onChange={(e) => setLocalFontSize(e.target.value)}
+                            className="rounded-lg text-sm outline-none"
+                            style={{ ...inputStyle, width: '90px' }}
+                        >
+                            <option value="10px">10</option>
+                            <option value="12px">12</option>
+                            <option value="default">14</option>
+                            <option value="16px">16</option>
+                            <option value="18px">18</option>
+                            <option value="20px">20</option>
+                            <option value="24px">24</option>
+                            <option value="30px">30</option>
+                        </select>
+                    </div>
                 </div>
 
                 {/* Action Buttons */}

@@ -14,6 +14,8 @@ const updateSchema = z.object({
       tag: z.string().nullable(),
     }),
   ).optional(),
+  journal_font: z.string().optional(),
+  journal_font_size: z.string().optional(),
 }).strict();
 
 export async function get(req, res, next) {

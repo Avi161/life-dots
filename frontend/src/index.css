@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -372,13 +372,18 @@ body {
 .journal-editor-content {
   outline: none;
   min-height: 200px;
-  font-family: var(--font-sans);
-  font-size: 14px;
+  font-family: var(--journal-font, var(--font-sans));
+  font-size: var(--journal-font-size, 14px);
   font-weight: 300;
   line-height: 1.75;
   color: var(--fg);
   caret-color: var(--fg);
   letter-spacing: 0.01em;
+}
+
+.journal-editor-content strong,
+.journal-editor-content b {
+  font-weight: 600;
 }
 
 .journal-editor-content p {
