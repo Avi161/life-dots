@@ -1,6 +1,6 @@
 import { DatabaseError } from '../middleware/errorHandler.js';
 
-const SETTINGS_COLUMNS = 'birth_date, expected_lifespan, theme, heartbeat_enabled, dot_meta';
+const SETTINGS_COLUMNS = 'birth_date, expected_lifespan, theme, heartbeat_enabled, dot_meta, journal_font, journal_font_size';
 
 export async function getSettings(supabase, userId) {
   const { data, error } = await supabase

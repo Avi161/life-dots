@@ -118,9 +118,38 @@ function ColorSwatch({ color, active, onClick }) {
     );
 }
 
-export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
+const FONT_OPTIONS = [
+    { value: 'Inter, sans-serif', label: 'Inter' },
+    { value: 'Arial, sans-serif', label: 'Arial' },
+    { value: 'Times New Roman, Times, serif', label: 'Times New Roman' },
+    { value: 'Georgia, serif', label: 'Georgia' },
+    { value: 'Courier New, Courier, monospace', label: 'Courier New' },
+];
+
+const SIZE_OPTIONS = [
+    { value: '10px', label: '10' },
+    { value: '12px', label: '12' },
+    { value: '14px', label: '14' },
+    { value: '16px', label: '16' },
+    { value: '18px', label: '18' },
+    { value: '20px', label: '20' },
+    { value: '24px', label: '24' },
+    { value: '30px', label: '30' },
+];
+
+// Strip quotes to normalize font names (TipTap's parseHTML strips them)
+const normalizeFont = (f) => (f ? f.replace(/['"]+ /g, '').replace(/['"]+ /g, '').replace(/['"]/g, '') : f);
+
+// Resolve 'default' to actual values
+const resolveFont = (f) => (f && f !== 'default' ? normalizeFont(f) : 'Inter, sans-serif');
+const resolveSize = (s) => (s && s !== 'default' ? s : '14px');
+
+export default function JournalOverlay({ contextKey, displayTitle, onClose, journalFont = 'default', journalFontSize = 'default' }) {
     const { content, setContent, saveStatus, forceSave, isLoading } = useLocalJournal(contextKey);
-    const [, forceUpdate] = useState(0); // Used to ensure toolbar active states update instantly
+    const [, forceUpdate] = useState(0);
+
+    const defaultFont = resolveFont(journalFont);
+    const defaultSize = resolveSize(journalFontSize);
 
     const handleClose = useCallback(() => {
         forceSave();
@@ -152,18 +181,50 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
             setContent(ed.getHTML());
         },
         onTransaction: () => {
-            // Force re-render on selection/format changes so toolbar updates immediately
             forceUpdate(x => x + 1);
         },
         editorProps: {
             attributes: {
                 class: 'journal-editor-content',
             },
+            handleKeyDown: (view, event) => {
+                // Auto-apply default font/size as inline marks when typing at unmarked position
+                if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                    const { state } = view;
+                    const attrs = state.storedMarks
+                        ? Object.fromEntries(state.storedMarks.flatMap(m => m.type.name === 'textStyle' ? [['fontFamily', m.attrs.fontFamily], ['fontSize', m.attrs.fontSize]] : []))
+                        : (state.selection.$from.marks() || []).reduce((acc, m) => {
+                            if (m.type.name === 'textStyle') {
+                                if (m.attrs.fontFamily) acc.fontFamily = m.attrs.fontFamily;
+                                if (m.attrs.fontSize) acc.fontSize = m.attrs.fontSize;
+                            }
+                            return acc;
+                        }, {});
+                    
+                    const needsFont = !attrs.fontFamily;
+                    const needsSize = !attrs.fontSize;
+                    
+                    if (needsFont || needsSize) {
+                        const markAttrs = {};
+                        if (needsFont) markAttrs.fontFamily = defaultFont;
+                        if (needsSize) markAttrs.fontSize = defaultSize;
+                        // Merge with existing textStyle attrs
+                        const existing = attrs;
+                        const merged = { ...existing, ...markAttrs };
+                        // Set combined stored mark
+                        const markType = state.schema.marks.textStyle;
+                        if (markType) {
+                            const mark = markType.create(merged);
+                            view.dispatch(state.tr.addStoredMark(mark));
+                        }
+                    }
+                }
+                return false; // Let TipTap handle the keypress normally
+            },
         },
     });
 
-    // Update content cleanly if it arrives late from network 
-    // (after the editor mounted with local cached initial content)
+    // Update content cleanly if it arrives late from network
     useEffect(() => {
         if (editor && !isLoading && content !== undefined) {
             const currentHTML = editor.getHTML();
@@ -200,6 +261,10 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
         if (!editor) return false;
         return editor.isActive('textStyle', { color: colorValue });
     };
+
+    // Current cursor font/size (from mark or fallback to default)
+    const cursorFont = normalizeFont(editor?.getAttributes('textStyle').fontFamily) || defaultFont;
+    const cursorSize = editor?.getAttributes('textStyle').fontSize || defaultSize;
 
     if (!editor) return null;
 
@@ -266,43 +331,32 @@ export default function JournalOverlay({ contextKey, displayTitle, onClose }) {
                         <select
                             className="journal-toolbar-select"
                             style={{ minWidth: '110px' }}
-                            value={editor.getAttributes('textStyle').fontFamily || 'default'}
+                            value={cursorFont}
                             onChange={(e) => {
-                                if (e.target.value === 'default') {
-                                    editor.chain().focus().unsetFontFamily().run();
-                                } else {
-                                    editor.chain().focus().setFontFamily(e.target.value).run();
-                                }
+                                editor.chain().focus().setFontFamily(e.target.value).run();
                             }}
                             title="Font Family"
                         >
-                            <option value="default">Inter (Default)</option>
-                            <option value="Arial, sans-serif">Arial</option>
-                            <option value="'Times New Roman', Times, serif">Times New Roman</option>
-                            <option value="Georgia, serif">Georgia</option>
-                            <option value="'Courier New', Courier, monospace">Courier New</option>
+                            {FONT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}{opt.value === defaultFont ? ' (Default)' : ''}
+                                </option>
+                            ))}
                         </select>
 
                         <select
                             className="journal-toolbar-select"
-                            value={editor.getAttributes('textStyle').fontSize || 'default'}
+                            value={cursorSize}
                             onChange={(e) => {
-                                if (e.target.value === 'default') {
-                                    editor.chain().focus().unsetFontSize().run();
-                                } else {
-                                    editor.chain().focus().setFontSize(e.target.value).run();
-                                }
+                                editor.chain().focus().setFontSize(e.target.value).run();
                             }}
                             title="Font Size"
                         >
-                            <option value="10px">10</option>
-                            <option value="12px">12</option>
-                            <option value="default">14</option>
-                            <option value="16px">16</option>
-                            <option value="18px">18</option>
-                            <option value="20px">20</option>
-                            <option value="24px">24</option>
-                            <option value="30px">30</option>
+                            {SIZE_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}{opt.value === defaultSize ? ' (Default)' : ''}
+                                </option>
+                            ))}
                         </select>
                     </div>
 

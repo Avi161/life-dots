@@ -52,6 +52,12 @@ export default function App() {
     return !!localStorage.getItem('lifedots-auth-token');
   });
   const [user, setUser] = useState(null);
+  const [journalFont, setJournalFont] = useState(() => {
+    return localStorage.getItem('lifedots-journal-font') || 'Inter, sans-serif';
+  });
+  const [journalFontSize, setJournalFontSize] = useState(() => {
+    return localStorage.getItem('lifedots-journal-font-size') || '14px';
+  });
   const [isAllJournalsOpen, setIsAllJournalsOpen] = useState(false);
   const [isAllTodosOpen, setIsAllTodosOpen] = useState(false);
   const [pendingTodoContexts, setPendingTodoContexts] = useState([]);
@@ -75,6 +81,14 @@ export default function App() {
         }
         if (remote.theme) setTheme(remote.theme);
         if (remote.heartbeat_enabled != null) setHeartbeat(remote.heartbeat_enabled);
+        if (remote.journal_font) {
+          setJournalFont(remote.journal_font);
+          localStorage.setItem('lifedots-journal-font', remote.journal_font);
+        }
+        if (remote.journal_font_size) {
+          setJournalFontSize(remote.journal_font_size);
+          localStorage.setItem('lifedots-journal-font-size', remote.journal_font_size);
+        }
         setRefreshKey((k) => k + 1);
         return remote.birth_date == null;
       })
@@ -261,6 +275,18 @@ export default function App() {
     setDefaultColor(newColor);
     setRefreshKey((k) => k + 1);
   };
+
+  const handleSaveJournalFont = useCallback((font, size, skipDb = false) => {
+    setJournalFont(font);
+    setJournalFontSize(size);
+    localStorage.setItem('lifedots-journal-font', font);
+    localStorage.setItem('lifedots-journal-font-size', size);
+    if (!skipDb && isAuthenticated()) {
+      saveSettings({ journal_font: font, journal_font_size: size }).catch((err) =>
+        console.error('Failed to sync journal font:', err)
+      );
+    }
+  }, []);
 
   const pushView = (mode) => {
     setNavStack((prev) => [...prev, viewMode]);
@@ -482,6 +508,9 @@ export default function App() {
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
         refreshKey={refreshKey}
+        journalFont={journalFont}
+        journalFontSize={journalFontSize}
+        onSaveFont={handleSaveJournalFont}
       />
 
       {/* Journal Overlay */}
@@ -491,6 +520,8 @@ export default function App() {
             contextKey={contextKey}
             displayTitle={displayTitle}
             onClose={() => setJournalOpen(false)}
+            journalFont={journalFont}
+            journalFontSize={journalFontSize}
           />
         )}
       </AnimatePresence>
