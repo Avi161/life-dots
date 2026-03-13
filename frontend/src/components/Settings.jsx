@@ -345,7 +345,7 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                             className="w-full rounded-lg text-sm outline-none"
                             style={inputStyle}
                         >
-                            <option value="default">Inter (Default)</option>
+                            <option value="'Inter', sans-serif">Inter</option>
                             <option value="Arial, sans-serif">Arial</option>
                             <option value="'Times New Roman', Times, serif">Times New Roman</option>
                             <option value="Georgia, serif">Georgia</option>
@@ -359,7 +359,7 @@ export default function Settings({ isOpen, onClose, onBirthDateChange, heartbeat
                         >
                             <option value="10px">10</option>
                             <option value="12px">12</option>
-                            <option value="default">14</option>
+                            <option value="14px">14</option>
                             <option value="16px">16</option>
                             <option value="18px">18</option>
                             <option value="20px">20</option>

@@ -372,8 +372,8 @@ body {
 .journal-editor-content {
   outline: none;
   min-height: 200px;
-  font-family: var(--journal-font, var(--font-sans));
-  font-size: var(--journal-font-size, 14px);
+  font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 300;
   line-height: 1.75;
   color: var(--fg);
