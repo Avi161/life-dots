@@ -2,8 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(git remote:*)",
-      "Bash(gh issue:*)",
-      "Bash(ls -la /Users/avigyapaudel/Documents/Personal/LifeDots | grep -E \"\\\\.md$|\\\\.txt$|README\")"
+      "Bash(gh issue:*)"
     ]
   }
 }
