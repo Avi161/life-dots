@@ -16,7 +16,7 @@ import { getLifeStats, getCalendarDate, getBirthDate, hydrateFromRemote, formatC
 import { getAllDotMeta, setDotMeta, hydrateMetaFromRemote } from './utils/dotMeta';
 import AllJournalsModal from './components/AllJournalsModal';
 import AllTodosModal from './components/AllTodosModal';
-import { ListTodo, BookOpen, CalendarHeart } from 'lucide-react';
+import { ListTodo, BookOpen } from 'lucide-react';
 
 const viewVariants = {
   initial: (navDir) => {
@@ -611,22 +611,6 @@ export default function App() {
         />
         <JournalButton onClick={() => setJournalOpen(true)} />
         <TodoButton onClick={() => setTodoOpen(true)} />
-        <div
-          className="w-px h-5"
-          style={{ backgroundColor: 'var(--control-border)' }}
-        />
-        <button
-          onClick={jumpToToday}
-          className="p-[6px] rounded flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{
-            color: 'var(--fg)',
-            backgroundColor: 'var(--control-bg)',
-            border: '1px solid var(--control-border)',
-          }}
-          title="Jump to Today"
-        >
-          <CalendarHeart size={16} />
-        </button>
       </div>
 
       {/* Grid Area */}
